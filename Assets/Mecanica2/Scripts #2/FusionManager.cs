@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,15 +10,16 @@ public class FusionManager : MonoBehaviour
     public CardView cardViewPrefab;
 
     [Header("UI Slots")]
-    public Transform handPanel;   // donde instanciamos cartas iniciales
-    public Transform resultPanel; // donde mostramos el resultado
-    public Button fusionButton;   // botón "Fusionar"
+    public Transform handPanel;   // contenedor de las 3 cartas
+    public Transform resultPanel; // contenedor de la carta resultante
+    public Button fusionButton;
 
-    [Header("Mano inicial")]
-    public List<CardData> startingHand = new List<CardData>(); // arrastra 3 cartas aquí
+    [Header("Mano inicial (3 cartas)")]
+    public List<CardData> startingHand = new List<CardData>(); // arrastra 3 aquí
 
     private readonly List<CardView> _handViews = new();
-    private readonly HashSet<CardView> _selected = new();
+    private readonly List<CardView> _selectionOrder = new();   // mantiene orden de selección
+    private readonly HashSet<CardView> _selected = new();      // conjunto para consulta rápida
 
     void Start()
     {
@@ -28,12 +30,12 @@ public class FusionManager : MonoBehaviour
 
     private void SetupHand()
     {
-        // Limpia mano previa
         foreach (Transform t in handPanel) Destroy(t.gameObject);
         _handViews.Clear();
         _selected.Clear();
+        _selectionOrder.Clear();
 
-        foreach (var c in startingHand)
+        foreach (var c in startingHand.Take(3))
         {
             var v = Instantiate(cardViewPrefab, handPanel);
             v.Setup(c, this);
@@ -43,42 +45,80 @@ public class FusionManager : MonoBehaviour
 
     public void NotifySelectionChanged(CardView view, bool selected)
     {
-        if (selected) _selected.Add(view);
-        else _selected.Remove(view);
+        if (selected)
+        {
+            // Añadir y respetar límite de 2
+            if (!_selected.Contains(view))
+            {
+                _selected.Add(view);
+                _selectionOrder.Add(view);
+
+                // Si ahora hay 3, deselecciona la más antigua
+                if (_selected.Count > 2)
+                {
+                    var oldest = _selectionOrder[0];
+                    _selectionOrder.RemoveAt(0);
+                    _selected.Remove(oldest);
+                    oldest.SetSelectedFromManager(false); // fuerza visual y lógico
+                }
+            }
+        }
+        else
+        {
+            if (_selected.Contains(view))
+            {
+                _selected.Remove(view);
+                _selectionOrder.Remove(view);
+            }
+        }
+
         RefreshFusionButton();
     }
 
     private void RefreshFusionButton()
     {
-        // Habilita si se seleccionaron 3 cartas (o >=2 si prefieres)
-        fusionButton.interactable = _selected.Count >= 3;
+        // Debe haber exactamente 2 seleccionadas
+        if (_selected.Count == 2 && fusionDatabase != null)
+        {
+            var duo = GetSelectedData();
+            var canFuse = fusionDatabase.TryFuse(duo) != null;
+            fusionButton.interactable = canFuse;
+        }
+        else
+        {
+            fusionButton.interactable = false;
+        }
+    }
+
+    private List<CardData> GetSelectedData()
+    {
+        var list = new List<CardData>();
+        foreach (var v in _selected) list.Add(v.data);
+        return list;
     }
 
     public void OnClickFusionar()
     {
-        if (_selected.Count < 2) return;
+        if (_selected.Count != 2 || fusionDatabase == null) return;
 
-        // Construye la lista de datos seleccionados
-        var chosenData = new List<CardData>();
-        foreach (var v in _selected) chosenData.Add(v.data);
+        var duo = GetSelectedData();
+        var result = fusionDatabase.TryFuse(duo);
 
-        // Intenta fusionar
-        var result = fusionDatabase ? fusionDatabase.TryFuse(chosenData) : null;
-
-        // Si no hay receta, podrías cancelar o crear "Carta Fallida"
         if (result == null)
         {
-            Debug.Log("No hay receta para esa combinación.");
-            ShowResult(null, "Sin receta");
+            Debug.Log("Combinación no válida (sin receta).");
             return;
         }
 
-        // Muestra resultado
         ShowResult(result, "¡Fusión exitosa!");
 
-        // (Opcional) Reemplazar la mano por la carta resultante
-        // startingHand = new List<CardData>{ result };
-        // SetupHand();
+        // (Opcional) limpiar selección tras fusionar
+        foreach (var v in _selected.ToList())
+            v.SetSelectedFromManager(false);
+        _selected.Clear();
+        _selectionOrder.Clear();
+
+        RefreshFusionButton();
     }
 
     private void ShowResult(CardData data, string logMsg)

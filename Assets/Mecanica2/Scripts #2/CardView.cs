@@ -63,6 +63,12 @@ public class CardView : MonoBehaviour
 
         _manager.NotifySelectionChanged(this, _selected);
     }
+    // Agrega dentro de CardView (junto con el resto del código)
+    public void SetSelectedFromManager(bool on)
+    {
+        _selected = on;
+        SetSelected(on);
+    }
 
     private void SetSelected(bool on)
     {
