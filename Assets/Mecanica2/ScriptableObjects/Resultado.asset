@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 047edcf789e6b76498625539d2e35126, type: 3}
   m_Name: Resultado
   m_EditorClassIdentifier: 
-  id: resultado01
-  displayName: resultado
+  id: resultado12
+  displayName: Resultado
   artwork: {fileID: 0}
-  rarity: 1
   baseColor: {r: 0.7058824, g: 0.3137255, b: 1, a: 1}
+  resultDescription: Carta 1 + Carta 2

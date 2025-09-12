@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,11 +15,11 @@ public class FusionManager : MonoBehaviour
     public Button fusionButton;
 
     [Header("Mano inicial (3 cartas)")]
-    public List<CardData> startingHand = new List<CardData>(); // arrastra 3 aquí
+    public List<CardData> startingHand = new List<CardData>(); // arrastra 3 aquÃ­
 
     private readonly List<CardView> _handViews = new();
-    private readonly List<CardView> _selectionOrder = new();   // mantiene orden de selección
-    private readonly HashSet<CardView> _selected = new();      // conjunto para consulta rápida
+    private readonly List<CardView> _selectionOrder = new();   // mantiene orden de selecciÃ³n
+    private readonly HashSet<CardView> _selected = new();      // conjunto para consulta rÃ¡pida
 
     void Start()
     {
@@ -47,19 +47,19 @@ public class FusionManager : MonoBehaviour
     {
         if (selected)
         {
-            // Añadir y respetar límite de 2
+            // AÃ±adir y respetar lÃ­mite de 2
             if (!_selected.Contains(view))
             {
                 _selected.Add(view);
                 _selectionOrder.Add(view);
 
-                // Si ahora hay 3, deselecciona la más antigua
+                // Si ahora hay 3, deselecciona la mÃ¡s antigua
                 if (_selected.Count > 2)
                 {
                     var oldest = _selectionOrder[0];
                     _selectionOrder.RemoveAt(0);
                     _selected.Remove(oldest);
-                    oldest.SetSelectedFromManager(false); // fuerza visual y lógico
+                    oldest.SetSelectedFromManager(false); // fuerza visual y lÃ³gico
                 }
             }
         }
@@ -106,13 +106,13 @@ public class FusionManager : MonoBehaviour
 
         if (result == null)
         {
-            Debug.Log("Combinación no válida (sin receta).");
+            Debug.Log("CombinaciÃ³n no vÃ¡lida (sin receta).");
             return;
         }
 
-        ShowResult(result, "¡Fusión exitosa!");
+        ShowResult(result, "Â¡FusiÃ³n exitosa!");
 
-        // (Opcional) limpiar selección tras fusionar
+        // (Opcional) limpiar selecciÃ³n tras fusionar
         foreach (var v in _selected.ToList())
             v.SetSelectedFromManager(false);
         _selected.Clear();
@@ -128,9 +128,17 @@ public class FusionManager : MonoBehaviour
         {
             var v = Instantiate(cardViewPrefab, resultPanel);
             v.Setup(data, this);
+
+            // Mostrar texto dependiente del resultado
+            v.ShowResultExtraText();
+
+            // AnimaciÃ³n
+            var anim = v.gameObject.GetComponent<ResultAppear>() ?? v.gameObject.AddComponent<ResultAppear>();
+            anim.Play();
         }
         Debug.Log(logMsg);
     }
+
 
     private void ClearResultPanel()
     {

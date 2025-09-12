@@ -1,12 +1,13 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 [CreateAssetMenu(fileName = "CardData", menuName = "Cards/Card Data")]
 public class CardData : ScriptableObject
 {
-    public string id;          // ID �nico (ej: "FUEGO", "AGUA01")
-    public string displayName; // Nombre visible
-    public Sprite artwork;     // Imagen de la carta
-    [Range(1, 5)] public int rarity = 1;
-    [Header("Prototype")]
-    public Color baseColor = Color.gray;  // <- color de la carta para el prototipo
+    public string id;
+    public string displayName;
+    public Sprite artwork;
+    public Color baseColor = Color.gray;
+
+    [Header("Extra solo para resultados")]
+    public string resultDescription;  //  Texto extra que aparecerá si es resultado
 }

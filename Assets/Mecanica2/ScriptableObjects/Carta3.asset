@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Carta3
   m_EditorClassIdentifier: 
   id: carta03
-  displayName: carta3
+  displayName: Carta 3
   artwork: {fileID: 0}
   rarity: 1
   baseColor: {r: 0, g: 1, b: 0.10847831, a: 1}

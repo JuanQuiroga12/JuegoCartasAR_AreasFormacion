@@ -1,12 +1,14 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class CardView : MonoBehaviour
 {
     [Header("Refs")]
-    public Image background;
-    public Image artwork;
-    public Text title;
+    public Image background;         // Image del root (marco/diseño)
+    public Image artwork;            // Imagen central de la carta (opcional)
+    public TMP_Text title;
+    public TMP_Text resultOnlyText; // o TMP_Text
     public Outline selectionOutline;
 
     [Header("Data")]
@@ -14,7 +16,6 @@ public class CardView : MonoBehaviour
 
     private bool _selected;
     private FusionManager _manager;
-    private Color _baseColor; // guarda el color original de la carta
 
     public bool IsSelected => _selected;
 
@@ -24,46 +25,57 @@ public class CardView : MonoBehaviour
         _manager = manager;
 
         if (title) title.text = data ? data.displayName : "";
+        
 
-        // Artwork
+        // === Fondo (NO tocar el sprite si ya existe en el prefab) ===
+        if (background)
+        {
+            if (background.sprite == null)
+            {
+                // Sin sprite: usa color de respaldo
+                var col = data ? data.baseColor : Color.gray;
+                col.a = 1f;
+                background.color = col;
+            }
+            else
+            {
+                // Con sprite de diseño: no lo tinte
+                background.color = Color.white;
+            }
+            background.enabled = true;
+        }
+
+        // === Artwork (opcional) ===
         if (artwork)
         {
-            if (data && data.artwork)
+            if (data != null && data.artwork != null)
             {
                 artwork.sprite = data.artwork;
                 artwork.enabled = true;
+                artwork.preserveAspect = true;
             }
             else
             {
                 artwork.sprite = null;
-                artwork.enabled = false;
+                artwork.enabled = false; // no tapes el fondo con un rectángulo
             }
         }
-
-        // Color de fondo desde CardData
-        if (background)
+        if (resultOnlyText)
         {
-            background.sprite = null; // fondo plano
-            _baseColor = data ? data.baseColor : Color.gray;
-            _baseColor.a = 1f;
-            background.color = _baseColor;
-            background.enabled = true;
+            resultOnlyText.gameObject.SetActive(false);
         }
 
         SetSelected(false);
-        Debug.Log($"[CardView] Setup '{data?.displayName}' color={background?.color}");
     }
 
     public void OnClick()
     {
         if (_manager == null || data == null) return;
-
         _selected = !_selected;
         SetSelected(_selected);
-
         _manager.NotifySelectionChanged(this, _selected);
     }
-    // Agrega dentro de CardView (junto con el resto del código)
+
     public void SetSelectedFromManager(bool on)
     {
         _selected = on;
@@ -75,20 +87,23 @@ public class CardView : MonoBehaviour
         if (selectionOutline)
         {
             selectionOutline.enabled = on;
-            selectionOutline.effectDistance = on ? new Vector2(6, 6) : Vector2.zero;
+            selectionOutline.effectDistance = on ? new Vector2(3, -3) : Vector2.zero;
         }
-
-        if (background)
+        // Si tu fondo usa sprite, evita cambiar su color aquí.
+        // (Si usas color de respaldo, puedes aplicar un leve brillo multiplicando)
+        if (background && background.sprite == null)
         {
-            if (on)
-            {
-                // brillo leve sobre el color base
-                background.color = _baseColor * 1.1f;
-            }
-            else
-            {
-                background.color = _baseColor;
-            }
+            var baseCol = data ? data.baseColor : Color.gray;
+            baseCol.a = 1f;
+            background.color = on ? baseCol * 1.1f : baseCol;
+        }
+    }
+    public void ShowResultExtraText()
+    {
+        if (resultOnlyText && data != null && !string.IsNullOrEmpty(data.resultDescription))
+        {
+            resultOnlyText.text = data.resultDescription;
+            resultOnlyText.gameObject.SetActive(true);
         }
     }
 }
