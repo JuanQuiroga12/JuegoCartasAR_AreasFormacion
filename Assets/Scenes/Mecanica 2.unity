@@ -1282,9 +1282,15 @@ MonoBehaviour:
   resultPanel: {fileID: 721207347}
   fusionButton: {fileID: 1304359981}
   startingHand:
+<<<<<<< Updated upstream
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+=======
+  - {fileID: 11400000, guid: 17df3e678d2490e4d85db6effef2ccaf, type: 2}
+  - {fileID: 11400000, guid: 23a3ffd80a3aa374eb4e1cbe85b94769, type: 2}
+  - {fileID: 11400000, guid: 3067fe7f180041d4fb8d920607730b07, type: 2}
+>>>>>>> Stashed changes
 --- !u!1 &2071930862
 GameObject:
   m_ObjectHideFlags: 0

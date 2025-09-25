@@ -14,4 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: CG
   displayName: Computacion Grafica
+<<<<<<< Updated upstream
   artwork: {fileID: 21300000, guid: 5d0db55589026774cbcb045acc660e52, type: 3}
+=======
+  artwork: {fileID: 21300000, guid: bd2ccc4a2aa502f4b9e012db0edec919, type: 3}
+>>>>>>> Stashed changes

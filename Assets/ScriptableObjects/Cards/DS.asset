@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: DS
   displayName: Desarrollo de Software
-  artwork: {fileID: 0}
+  artwork: {fileID: 21300000, guid: ae1ee9c53920c564891103ec9a7fbcbf, type: 3}

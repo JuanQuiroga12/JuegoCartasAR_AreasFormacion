@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: REN
   displayName: Render
-  artwork: {fileID: 0}
+  artwork: {fileID: 21300000, guid: cc1212d54417b94488b87d918dd606ee, type: 3}

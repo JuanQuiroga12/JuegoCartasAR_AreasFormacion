@@ -14,4 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: LG
   displayName: Lenguaje Grafico
+<<<<<<< Updated upstream
   artwork: {fileID: 21300000, guid: 5d0db55589026774cbcb045acc660e52, type: 3}
+=======
+  artwork: {fileID: 21300000, guid: c992d23d45176104f9fa6b64cfe9d444, type: 3}
+>>>>>>> Stashed changes
