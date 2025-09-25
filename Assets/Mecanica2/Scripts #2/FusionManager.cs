@@ -47,19 +47,21 @@ public class FusionManager : MonoBehaviour
     {
         if (selected)
         {
-            // Añadir y respetar límite de 2
             if (!_selected.Contains(view))
             {
                 _selected.Add(view);
                 _selectionOrder.Add(view);
 
-                // Si ahora hay 3, deselecciona la más antigua
+                // Si hay más de 2, deseleccionar SOLO la más vieja distinta al view actual
                 if (_selected.Count > 2)
                 {
                     var oldest = _selectionOrder[0];
-                    _selectionOrder.RemoveAt(0);
-                    _selected.Remove(oldest);
-                    oldest.SetSelectedFromManager(false); // fuerza visual y lógico
+                    if (oldest != view)   // 🔑 evita desmarcar la misma que acabas de clickear
+                    {
+                        _selectionOrder.RemoveAt(0);
+                        _selected.Remove(oldest);
+                        oldest.SetSelectedFromManager(false);
+                    }
                 }
             }
         }
@@ -75,9 +77,10 @@ public class FusionManager : MonoBehaviour
         RefreshFusionButton();
     }
 
+
     private void RefreshFusionButton()
     {
-        // Debe haber exactamente 2 seleccionadas
+        // Botón activo solo si hay exactamente 2 seleccionadas y la combinación existe
         if (_selected.Count == 2 && fusionDatabase != null)
         {
             var duo = GetSelectedData();
@@ -92,9 +95,7 @@ public class FusionManager : MonoBehaviour
 
     private List<CardData> GetSelectedData()
     {
-        var list = new List<CardData>();
-        foreach (var v in _selected) list.Add(v.data);
-        return list;
+        return _selected.Select(v => v.data).ToList();
     }
 
     public void OnClickFusionar()
@@ -112,9 +113,10 @@ public class FusionManager : MonoBehaviour
 
         ShowResult(result, "¡Fusión exitosa!");
 
-        // (Opcional) limpiar selección tras fusionar
+        // Limpia selección tras fusionar
         foreach (var v in _selected.ToList())
             v.SetSelectedFromManager(false);
+
         _selected.Clear();
         _selectionOrder.Clear();
 
@@ -129,16 +131,12 @@ public class FusionManager : MonoBehaviour
             var v = Instantiate(cardViewPrefab, resultPanel);
             v.Setup(data, this);
 
-            // Mostrar texto dependiente del resultado
-            
-
-            // Animación
+            // Animación de aparición
             var anim = v.gameObject.GetComponent<ResultAppear>() ?? v.gameObject.AddComponent<ResultAppear>();
             anim.Play();
         }
         Debug.Log(logMsg);
     }
-
 
     private void ClearResultPanel()
     {

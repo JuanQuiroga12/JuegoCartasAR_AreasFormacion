@@ -260,19 +260,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 4136896239034054196}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 8214044852483143287}
-        m_TargetAssemblyTypeName: CardView, Assembly-CSharp
-        m_MethodName: OnClick
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!114 &8705254465392420971
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -301,10 +289,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   background: {fileID: 4136896239034054196}
-  artwork: {fileID: 0}
-  title: {fileID: 1119505573138427990}
-  resultOnlyText: {fileID: 2038390480709943024}
-  selectionOutline: {fileID: 8705254465392420971}
   data: {fileID: 0}
 --- !u!114 &259248682339345189
 MonoBehaviour:

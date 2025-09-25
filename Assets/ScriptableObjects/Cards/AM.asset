@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: AM
   displayName: Animacion y Modelado
-  artwork: {fileID: 0}
+  artwork: {fileID: 21300000, guid: 63db52622428c0d4e84461d31284be30, type: 3}

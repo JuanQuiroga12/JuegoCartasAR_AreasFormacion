@@ -1,88 +1,80 @@
-using UnityEngine;
+Ôªøusing UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// CardView minimalista (usa sprite completo en background).
-/// Incluye SetSelectedFromManager para que FusionManager pueda forzar selecciÛn.
-/// </summary>
 [RequireComponent(typeof(Button))]
 public class CardView : MonoBehaviour
 {
     [Header("Refs")]
-    public Image background;   // Image del root que contendr· el sprite completo de la carta
+    public Image background;   // Image principal (sprite completo de la carta)
 
     [Header("Data")]
-    public CardData data;      // asignado en Setup()
+    public CardData data;
 
-    bool _selected;
-    FusionManager _manager;
+    private bool _selected;
+    private FusionManager _manager;
 
     public bool IsSelected => _selected;
 
     void Awake()
     {
-        // Auto-conectar botÛn al OnClick local (seguro aunque ya lo tengas en inspector)
         var btn = GetComponent<Button>();
         if (btn != null)
         {
             btn.onClick.RemoveListener(OnClick);
             btn.onClick.AddListener(OnClick);
         }
+
+        // aseguramos que arranca deseleccionada
+        _selected = false;
+        UpdateVisualSelection();
     }
 
-    // Inicializa la carta
-    public void Setup(CardData cardData, FusionManager manager)
+    public void Setup(CardData data, FusionManager manager)
     {
-        data = cardData;
+        this.data = data;
         _manager = manager;
-        _selected = false;
 
         if (background && data != null && data.artwork != null)
         {
             background.sprite = data.artwork;
             background.color = Color.white;
-            background.enabled = true;
-        }
-        else if (background)
-        {
-            background.sprite = null;
-            background.enabled = false;
         }
 
-        UpdateVisualSelection();
+        SetSelectedFromManager(false);
     }
 
-    // Click desde el Button
     public void OnClick()
     {
         if (_manager == null || data == null) return;
 
+        // cambiar estado y avisar al manager
         _selected = !_selected;
         UpdateVisualSelection();
         _manager.NotifySelectionChanged(this, _selected);
+
+        Debug.Log($"[CardView] {(data != null ? data.displayName : "??")} seleccionado={_selected}");
     }
 
-    // MÈtodo p˙blico para que el manager fuerce selecciÛn/deselecciÛn
     public void SetSelectedFromManager(bool on)
     {
         _selected = on;
-        UpdateVisualSelection();
+        UpdateVisualSelection(); // ‚ùå NO vuelvas a llamar a _manager.NotifySelectionChanged aqu√≠
     }
 
-    // Actualiza el outline / alpha u otro feedback visual
-    void UpdateVisualSelection()
+
+    private void UpdateVisualSelection()
     {
-        // Si tienes Outline en el mismo GameObject, lo activamos/desactivamos
+        // Opci√≥n 1: activar Outline si existe
         var outline = GetComponent<Outline>();
         if (outline != null)
             outline.enabled = _selected;
 
-        // Ejemplo simple: bajar la alpha si est· seleccionado (ajusta a tu gusto)
+        // Opci√≥n 2: cambiar alpha del fondo
         if (background != null)
         {
-            var c = background.color;
-            c.a = _selected ? 0.8f : 1f;
-            background.color = c;
+            var col = background.color;
+            col.a = _selected ? 0.7f : 1f;
+            background.color = col;
         }
     }
 }
