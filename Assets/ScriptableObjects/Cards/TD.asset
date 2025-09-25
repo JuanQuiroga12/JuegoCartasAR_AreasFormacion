@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: TD
   displayName: Transformacion Digital
-  artwork: {fileID: 21300000, guid: 63903e7661aa05c488778123694bd55c, type: 3}
+  artwork: {fileID: 0}

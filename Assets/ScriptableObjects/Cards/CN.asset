@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: CN
   displayName: Contexto y Narrativa
-  artwork: {fileID: 21300000, guid: 22547ee5643dd1e4986e8bece5f6df87, type: 3}
+  artwork: {fileID: 0}

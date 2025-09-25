@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: SI
   displayName: Sistemas Interactivos
-  artwork: {fileID: 21300000, guid: 66da3621f2fca6e499279192e5f5c24a, type: 3}
+  artwork: {fileID: 0}

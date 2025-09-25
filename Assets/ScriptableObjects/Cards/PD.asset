@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: PD
   displayName: Procesamiento Digital
-  artwork: {fileID: 21300000, guid: 413f0cd94cce65e4a98ac5168d95ce15, type: 3}
+  artwork: {fileID: 0}

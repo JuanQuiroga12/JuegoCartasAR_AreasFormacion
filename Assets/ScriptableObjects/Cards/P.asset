@@ -14,8 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: P
   displayName: Nucleo de Programacion
-<<<<<<< Updated upstream
   artwork: {fileID: 21300000, guid: 5d0db55589026774cbcb045acc660e52, type: 3}
-=======
-  artwork: {fileID: 21300000, guid: 77c6cea4d8cb02544a0091da4dc965ff, type: 3}
->>>>>>> Stashed changes

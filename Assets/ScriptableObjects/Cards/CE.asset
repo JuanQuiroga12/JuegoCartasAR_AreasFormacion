@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: CE
   displayName: Ciencias de la Ingenieria
-  artwork: {fileID: 21300000, guid: 261cd3204c9e4c34a98a119537c3b5a2, type: 3}
+  artwork: {fileID: 0}

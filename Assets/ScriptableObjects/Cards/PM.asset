@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: PM
   displayName: Produccion Multimedia
-  artwork: {fileID: 21300000, guid: ce477307f47eba54c83cfeaaf70cfecf, type: 3}
+  artwork: {fileID: 0}

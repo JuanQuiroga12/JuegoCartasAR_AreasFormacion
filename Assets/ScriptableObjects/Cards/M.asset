@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: M
   displayName: Fundamentos Matematicos
-  artwork: {fileID: 21300000, guid: 236a7e50a81011a40bd86147eaf475d5, type: 3}
+  artwork: {fileID: 0}
