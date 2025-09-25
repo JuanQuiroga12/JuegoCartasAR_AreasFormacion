@@ -1,0 +1,23 @@
+id,displayName,artwork
+M,Fundamentos Matematicos,Assets/Sprites/M.png
+C,Nucleo Cientifico,Assets/Sprites/C.png
+P,Nucleo de Programacion,Assets/Sprites/P.png
+LG,Lenguaje Grafico,Assets/Sprites/LG.png
+D,Formacion en Diseno,Assets/Sprites/D.png
+CG,Computacion Grafica,Assets/Sprites/CG.png
+AM,Animacion y Modelado,Assets/Sprites/AM.png
+CN,Contexto y Narrativa,Assets/Sprites/CN.png
+PD,Procesamiento Digital,Assets/Sprites/PD.png
+DS,Desarrollo de Software,Assets/Sprites/DS.png
+AV,Audio y Video,Assets/Sprites/AV.png
+CE,Ciencias de la Ingenieria,Assets/Sprites/CE.png
+IA,Inteligencia Artificial,Assets/Sprites/IA.png
+SIM,Simulacion,Assets/Sprites/SIM.png
+REN,Render,Assets/Sprites/REN.png
+A3D,Aplicaciones 3D,Assets/Sprites/A3D.png
+IM,Integracion Multimedia,Assets/Sprites/IM.png
+EIA,Electiva de Ingenieria Aplicada,Assets/Sprites/EIA.png
+PM,Produccion Multimedia,Assets/Sprites/PM.png
+SI,Sistemas Interactivos,Assets/Sprites/SI.png
+PAIM,Procesamiento y Analisis de Informacion Multimedia,Assets/Sprites/PAIM.png
+TD,Transformacion Digital,Assets/Sprites/TD.png

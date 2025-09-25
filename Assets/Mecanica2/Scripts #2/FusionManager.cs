@@ -130,7 +130,7 @@ public class FusionManager : MonoBehaviour
             v.Setup(data, this);
 
             // Mostrar texto dependiente del resultado
-            v.ShowResultExtraText();
+            
 
             // Animación
             var anim = v.gameObject.GetComponent<ResultAppear>() ?? v.gameObject.AddComponent<ResultAppear>();

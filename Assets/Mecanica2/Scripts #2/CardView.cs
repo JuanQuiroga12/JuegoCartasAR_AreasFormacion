@@ -1,109 +1,88 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
+/// <summary>
+/// CardView minimalista (usa sprite completo en background).
+/// Incluye SetSelectedFromManager para que FusionManager pueda forzar selección.
+/// </summary>
+[RequireComponent(typeof(Button))]
 public class CardView : MonoBehaviour
 {
     [Header("Refs")]
-    public Image background;         // Image del root (marco/diseño)
-    public Image artwork;            // Imagen central de la carta (opcional)
-    public TMP_Text title;
-    public TMP_Text resultOnlyText; // o TMP_Text
-    public Outline selectionOutline;
+    public Image background;   // Image del root que contendrá el sprite completo de la carta
 
     [Header("Data")]
-    public CardData data;
+    public CardData data;      // asignado en Setup()
 
-    private bool _selected;
-    private FusionManager _manager;
+    bool _selected;
+    FusionManager _manager;
 
     public bool IsSelected => _selected;
 
-    public void Setup(CardData data, FusionManager manager)
+    void Awake()
     {
-        this.data = data;
-        _manager = manager;
-
-        if (title) title.text = data ? data.displayName : "";
-        
-
-        // === Fondo (NO tocar el sprite si ya existe en el prefab) ===
-        if (background)
+        // Auto-conectar botón al OnClick local (seguro aunque ya lo tengas en inspector)
+        var btn = GetComponent<Button>();
+        if (btn != null)
         {
-            if (background.sprite == null)
-            {
-                // Sin sprite: usa color de respaldo
-                var col = data ? data.baseColor : Color.gray;
-                col.a = 1f;
-                background.color = col;
-            }
-            else
-            {
-                // Con sprite de diseño: no lo tinte
-                background.color = Color.white;
-            }
-            background.enabled = true;
+            btn.onClick.RemoveListener(OnClick);
+            btn.onClick.AddListener(OnClick);
         }
-
-        // === Artwork (opcional) ===
-        if (artwork)
-        {
-            if (data != null && data.artwork != null)
-            {
-                artwork.sprite = data.artwork;
-                artwork.enabled = true;
-                artwork.preserveAspect = true;
-            }
-            else
-            {
-                artwork.sprite = null;
-                artwork.enabled = false; // no tapes el fondo con un rectángulo
-            }
-        }
-        if (resultOnlyText)
-        {
-            resultOnlyText.gameObject.SetActive(false);
-        }
-
-        SetSelected(false);
     }
 
+    // Inicializa la carta
+    public void Setup(CardData cardData, FusionManager manager)
+    {
+        data = cardData;
+        _manager = manager;
+        _selected = false;
+
+        if (background && data != null && data.artwork != null)
+        {
+            background.sprite = data.artwork;
+            background.color = Color.white;
+            background.enabled = true;
+        }
+        else if (background)
+        {
+            background.sprite = null;
+            background.enabled = false;
+        }
+
+        UpdateVisualSelection();
+    }
+
+    // Click desde el Button
     public void OnClick()
     {
         if (_manager == null || data == null) return;
+
         _selected = !_selected;
-        SetSelected(_selected);
+        UpdateVisualSelection();
         _manager.NotifySelectionChanged(this, _selected);
     }
 
+    // Método público para que el manager fuerce selección/deselección
     public void SetSelectedFromManager(bool on)
     {
         _selected = on;
-        SetSelected(on);
+        UpdateVisualSelection();
     }
 
-    private void SetSelected(bool on)
+    // Actualiza el outline / alpha u otro feedback visual
+    void UpdateVisualSelection()
     {
-        if (selectionOutline)
+        // Si tienes Outline en el mismo GameObject, lo activamos/desactivamos
+        var outline = GetComponent<Outline>();
+        if (outline != null)
+            outline.enabled = _selected;
+
+        // Ejemplo simple: bajar la alpha si está seleccionado (ajusta a tu gusto)
+        if (background != null)
         {
-            selectionOutline.enabled = on;
-            selectionOutline.effectDistance = on ? new Vector2(3, -3) : Vector2.zero;
-        }
-        // Si tu fondo usa sprite, evita cambiar su color aquí.
-        // (Si usas color de respaldo, puedes aplicar un leve brillo multiplicando)
-        if (background && background.sprite == null)
-        {
-            var baseCol = data ? data.baseColor : Color.gray;
-            baseCol.a = 1f;
-            background.color = on ? baseCol * 1.1f : baseCol;
-        }
-    }
-    public void ShowResultExtraText()
-    {
-        if (resultOnlyText && data != null && !string.IsNullOrEmpty(data.resultDescription))
-        {
-            resultOnlyText.text = data.resultDescription;
-            resultOnlyText.gameObject.SetActive(true);
+            var c = background.color;
+            c.a = _selected ? 0.8f : 1f;
+            background.color = c;
         }
     }
 }
