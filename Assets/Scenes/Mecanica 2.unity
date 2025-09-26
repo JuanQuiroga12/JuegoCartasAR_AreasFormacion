@@ -1530,7 +1530,7 @@ MonoBehaviour:
   resultPanel: {fileID: 721207347}
   fusionButton: {fileID: 1304359981}
   startingHand:
-  - {fileID: 11400000, guid: 28274397020682740b9372d0b01d27bf, type: 2}
+  - {fileID: 11400000, guid: 6f76d42e722c4ae45b9726699e849296, type: 2}
   - {fileID: 11400000, guid: cbec12123bb4a2c43a8c3ed494d199aa, type: 2}
   - {fileID: 11400000, guid: be3a5326f88f42c4cb1cb42fa7cc48a4, type: 2}
 --- !u!1 &2031057847
