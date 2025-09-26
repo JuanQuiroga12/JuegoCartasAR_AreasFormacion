@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: A3D
   displayName: Aplicaciones 3D
-  artwork: {fileID: 21300000, guid: 5d0db55589026774cbcb045acc660e52, type: 3}
+  artwork: {fileID: 21300000, guid: 142fee4158cc2764ea732f5c00ecfb66, type: 3}
