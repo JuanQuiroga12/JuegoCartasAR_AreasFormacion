@@ -2,77 +2,157 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(RectTransform))]
 public class ResultAppear : MonoBehaviour
 {
-    [Header("Ajustes")]
-    public float duration = 0.35f;
-    public float startScale = 0.6f;
-    public float startYOffset = -80f;   // inicia un poco desde abajo (negativo = abajo)
-    public float startRotation = -6f;   // leve giro inicial
+    [Header("Configuración de Animación")]
+    [SerializeField] private float appearDuration = 0.5f;
+    [SerializeField] private float displayDuration = 2f;
+    [SerializeField] private float disappearDuration = 0.5f;
 
-    private CanvasGroup cg;
-    private RectTransform rt;
+    [Header("Efectos")]
+    [SerializeField] private AnimationCurve scaleCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [SerializeField] private AnimationCurve alphaCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    [SerializeField] private bool rotateOnAppear = true;
+    [SerializeField] private float rotationAmount = 360f;
 
-    // Estados objetivo
-    private Vector3 targetScale;
-    private Vector2 targetPos;     // ¡Vector2 porque anchoredPosition es Vector2!
-    private Vector3 targetRot;
+    private CanvasGroup canvasGroup;
+    private RectTransform rectTransform;
 
     void Awake()
     {
-        rt = GetComponent<RectTransform>();
-        cg = GetComponent<CanvasGroup>();
-        if (!cg) cg = gameObject.AddComponent<CanvasGroup>();
+        rectTransform = GetComponent<RectTransform>();
+
+        // Obtener o agregar CanvasGroup
+        canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+        {
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
+
+        // Iniciar oculto
+        canvasGroup.alpha = 0;
+        transform.localScale = Vector3.zero;
     }
 
     public void Play()
     {
-        StopAllCoroutines();
-        StartCoroutine(PlayCo());
+        StartCoroutine(AnimateResult());
     }
 
-    private IEnumerator PlayCo()
+    private IEnumerator AnimateResult()
     {
-        // Estados finales deseados
-        targetScale = Vector3.one;
-        targetPos = rt.anchoredPosition;  // Vector2
-        targetRot = Vector3.zero;
+        // Fase 1: Aparecer
+        yield return StartCoroutine(AppearAnimation());
 
-        // Estados iniciales
-        rt.localScale = Vector3.one * startScale;
-        rt.anchoredPosition = targetPos + new Vector2(0f, startYOffset); // Vector2 + Vector2
-        rt.localEulerAngles = new Vector3(0f, 0f, startRotation);
-        cg.alpha = 0f;
+        // Fase 2: Mostrar
+        yield return new WaitForSeconds(displayDuration);
 
-        float t = 0f;
-        while (t < 1f)
+        // Fase 3: Desaparecer
+        yield return StartCoroutine(DisappearAnimation());
+
+        // Destruir el objeto
+        Destroy(gameObject);
+    }
+
+    private IEnumerator AppearAnimation()
+    {
+        float elapsed = 0f;
+        Vector3 startScale = Vector3.zero;
+        Vector3 targetScale = Vector3.one;
+        float startRotation = 0f;
+
+        while (elapsed < appearDuration)
         {
-            t += Time.unscaledDeltaTime / duration;
-            float e = EaseOutBack(Mathf.Clamp01(t));    // easing para “pop”
-            float eAlpha = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
+            elapsed += Time.deltaTime;
+            float t = elapsed / appearDuration;
 
-            rt.localScale = Vector3.LerpUnclamped(Vector3.one * startScale, targetScale, e);
-            rt.anchoredPosition = Vector2.Lerp(targetPos + new Vector2(0f, startYOffset), targetPos, e);
-            rt.localEulerAngles = Vector3.Lerp(new Vector3(0f, 0f, startRotation), targetRot, e);
-            cg.alpha = eAlpha;
+            // Escala
+            float scaleValue = scaleCurve.Evaluate(t);
+            transform.localScale = Vector3.Lerp(startScale, targetScale, scaleValue);
+
+            // Alpha
+            float alphaValue = alphaCurve.Evaluate(t);
+            canvasGroup.alpha = alphaValue;
+
+            // Rotación opcional
+            if (rotateOnAppear && rectTransform != null)
+            {
+                float rotation = Mathf.Lerp(startRotation, rotationAmount, t);
+                rectTransform.localRotation = Quaternion.Euler(0, 0, rotation);
+            }
 
             yield return null;
         }
 
-        // Asegura estado final exacto
-        rt.localScale = targetScale;
-        rt.anchoredPosition = targetPos;
-        rt.localEulerAngles = targetRot;
-        cg.alpha = 1f;
+        // Asegurar valores finales
+        transform.localScale = targetScale;
+        canvasGroup.alpha = 1f;
+
+        if (rotateOnAppear && rectTransform != null)
+        {
+            rectTransform.localRotation = Quaternion.Euler(0, 0, 0);
+        }
+
+        // Efecto de "bounce" opcional
+        yield return StartCoroutine(BounceEffect());
     }
 
-    // Curva tipo "back" (ligero overshoot agradable)
-    private float EaseOutBack(float x)
+    private IEnumerator BounceEffect()
     {
-        const float c1 = 1.70158f;
-        const float c3 = c1 + 1f;
-        float p = x - 1f;
-        return 1f + c3 * (p * p * p) + c1 * (p * p);
+        float bounceDuration = 0.2f;
+        float elapsed = 0f;
+
+        while (elapsed < bounceDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / bounceDuration;
+
+            // Curva de bounce
+            float bounceScale = 1f + Mathf.Sin(t * Mathf.PI) * 0.1f;
+            transform.localScale = Vector3.one * bounceScale;
+
+            yield return null;
+        }
+
+        transform.localScale = Vector3.one;
+    }
+
+    private IEnumerator DisappearAnimation()
+    {
+        float elapsed = 0f;
+        Vector3 startScale = transform.localScale;
+        Vector3 targetScale = Vector3.zero;
+        float startAlpha = canvasGroup.alpha;
+
+        while (elapsed < disappearDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / disappearDuration;
+
+            // Escala hacia abajo
+            transform.localScale = Vector3.Lerp(startScale, targetScale, t);
+
+            // Fade out
+            canvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, t);
+
+            // Rotación opcional al desaparecer
+            if (rotateOnAppear && rectTransform != null)
+            {
+                float rotation = Mathf.Lerp(0, -rotationAmount * 0.5f, t);
+                rectTransform.localRotation = Quaternion.Euler(0, 0, rotation);
+            }
+
+            yield return null;
+        }
+
+        transform.localScale = targetScale;
+        canvasGroup.alpha = 0f;
+    }
+
+    // Método público para detener la animación si es necesario
+    public void Stop()
+    {
+        StopAllCoroutines();
+        Destroy(gameObject);
     }
 }
