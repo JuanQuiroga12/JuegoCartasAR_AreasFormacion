@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "464578915525",
+    "project_id": "proyecto-cartas-ar",
+    "storage_bucket": "proyecto-cartas-ar.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:464578915525:android:7662ccd7a7895039cb14ac",
+        "android_client_info": {
+          "package_name": "com.UMNG.ProyectoAreasFormacionCartasAR"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuIsvMPqXFKHhmaoCDAcfCyjoRcT4Pu18"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

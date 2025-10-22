@@ -28,6 +28,9 @@ public class FusionManager : MonoBehaviour
     private GameManager gameManager;
     private bool isDiscardMode = false;
 
+    // Variable para almacenar el último resultado de fusión (para multijugador)
+    private CardData lastFusionResult = null;
+
     void Start()
     {
         gameManager = Object.FindFirstObjectByType<GameManager>();
@@ -185,7 +188,7 @@ public class FusionManager : MonoBehaviour
         }
     }
 
-    private List<CardData> GetSelectedData()
+    public List<CardData> GetSelectedData()
     {
         return _selected.Select(v => v.data).ToList();
     }
@@ -202,6 +205,9 @@ public class FusionManager : MonoBehaviour
             Debug.Log("Combinación no válida (sin receta).");
             return;
         }
+
+        // Guardar el último resultado de fusión para multijugador
+        lastFusionResult = result;
 
         // Remover las cartas fusionadas
         var cardsToRemove = _selected.ToList();
@@ -256,5 +262,26 @@ public class FusionManager : MonoBehaviour
         {
             // El FanHandLayout se encargará de reorganizar las cartas automáticamente
         }
+    }
+
+    // ========== MÉTODOS PARA MULTIJUGADOR ==========
+
+    /// <summary>
+    /// Obtiene el último resultado de fusión realizado.
+    /// Se usa para sincronizar la fusión con Firebase en modo multijugador.
+    /// </summary>
+    /// <returns>La CardData del último resultado de fusión, o null si no hay ninguno</returns>
+    public CardData GetLastFusionResult()
+    {
+        return lastFusionResult;
+    }
+
+    /// <summary>
+    /// Limpia el último resultado de fusión almacenado.
+    /// Útil para resetear el estado después de sincronizar.
+    /// </summary>
+    public void ClearLastFusionResult()
+    {
+        lastFusionResult = null;
     }
 }
