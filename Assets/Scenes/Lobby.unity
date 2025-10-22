@@ -1071,6 +1071,69 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 220209250}
   m_CullTransparentMesh: 1
+--- !u!1 &364384336
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 364384338}
+  - component: {fileID: 364384337}
+  m_Layer: 0
+  m_Name: LobbyUIManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &364384337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 364384336}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b454fd7263ec274eb31f3baa363bfe0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainMenuPanel: {fileID: 2066646310}
+  createRoomPanel: {fileID: 479361598}
+  waitingRoomPanel: {fileID: 1132281003}
+  createRoomButton: {fileID: 16854160}
+  joinRoomButton: {fileID: 1846073413}
+  playerNameInput: {fileID: 1259342858}
+  maxPlayersDropdown: {fileID: 823986773}
+  confirmCreateButton: {fileID: 1469913088}
+  backFromCreateButton: {fileID: 1888310091}
+  roomIdText: {fileID: 24668063}
+  playersCountText: {fileID: 1417716051}
+  playersListContainer: {fileID: 1828087176}
+  playerItemPrefab: {fileID: 5130554452895369335, guid: d330ddd9497ab774383904dbf1585a56, type: 3}
+  startGameButton: {fileID: 1432357313}
+  leaveRoomButton: {fileID: 913034077}
+  joinRoomPanel: {fileID: 59392662}
+  roomCodeInput: {fileID: 1782316538}
+  confirmJoinButton: {fileID: 182796736}
+  backFromJoinButton: {fileID: 1014255050}
+--- !u!4 &364384338
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 364384336}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1180.7845, y: 738.7927, z: 1157.5347}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &479361598
 GameObject:
   m_ObjectHideFlags: 0
@@ -5684,3 +5747,4 @@ SceneRoots:
   - {fileID: 1936548692}
   - {fileID: 806731281}
   - {fileID: 1851457795}
+  - {fileID: 364384338}
