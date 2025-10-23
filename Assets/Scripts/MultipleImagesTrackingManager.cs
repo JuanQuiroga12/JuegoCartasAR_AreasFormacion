@@ -1,70 +1,155 @@
+﻿using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 
 public class MultipleImagesTrackingManager : MonoBehaviour
 {
-    [SerializeField] List<GameObject> prefabsToSpawn = new List<GameObject>();
+    [SerializeField] private ARTrackedImageManager trackedImageManager;
+    private Dictionary<string, GameObject> spawnedPrefabs = new Dictionary<string, GameObject>();
 
-    private ARTrackedImageManager _trackedImageManager;
+    // 🔥 NUEVO: Diccionario para mapear imágenes a prefabs manualmente
+    [Header("Prefab Mapping")]
+    [SerializeField] private List<ImagePrefabPair> imagePrefabMapping = new List<ImagePrefabPair>();
+    private Dictionary<string, GameObject> prefabDictionary = new Dictionary<string, GameObject>();
 
-    private Dictionary<string, GameObject> _arObjects;
+    // 🔥 NUEVO: Eventos para notificar detecciones
+    public System.Action<string, ARTrackedImage> OnImageDetected;
+    public System.Action<string> OnImageLost;
 
-    private void Start()
+    void Awake()
     {
-        _trackedImageManager = GetComponent<ARTrackedImageManager>();
-        if (_trackedImageManager == null) return;
-        _trackedImageManager.trackablesChanged.AddListener(OnImagesTrackedChanged);
-        _arObjects = new Dictionary<string, GameObject>();
-        SetupSceneElements();
-    }
-
-    private void OnDestroy()
-    {
-        _trackedImageManager.trackablesChanged.RemoveListener(OnImagesTrackedChanged);
-    }
-
-    private void SetupSceneElements()
-    {
-        foreach (var prefab in prefabsToSpawn)
+        if (trackedImageManager == null)
         {
-            var arObject = Instantiate(prefab, Vector3.zero, Quaternion.identity);
-            arObject.name = prefab.name;
-            arObject.gameObject.SetActive(false);
-            _arObjects.Add(arObject.name, arObject);
+            trackedImageManager = GetComponent<ARTrackedImageManager>();
+        }
+
+        // 🔥 NUEVO: Inicializar diccionario de prefabs
+        InitializePrefabDictionary();
+    }
+
+    // 🔥 NUEVO: Método para inicializar el diccionario de prefabs
+    private void InitializePrefabDictionary()
+    {
+        prefabDictionary.Clear();
+        foreach (var pair in imagePrefabMapping)
+        {
+            if (!string.IsNullOrEmpty(pair.imageName) && pair.prefab != null)
+            {
+                prefabDictionary[pair.imageName] = pair.prefab;
+                Debug.Log($"[MultipleImagesTracking] Prefab mapeado: {pair.imageName} → {pair.prefab.name}");
+            }
         }
     }
 
-    private void OnImagesTrackedChanged(ARTrackablesChangedEventArgs<ARTrackedImage> eventArgs)
+    void OnEnable()
     {
+        if (trackedImageManager != null)
+        {
+            trackedImageManager.trackablesChanged.AddListener(OnTrackedImagesChanged);
+        }
+    }
+
+    void OnDisable()
+    {
+        if (trackedImageManager != null)
+        {
+            trackedImageManager.trackablesChanged.RemoveListener(OnTrackedImagesChanged);
+        }
+    }
+
+    private void OnTrackedImagesChanged(ARTrackablesChangedEventArgs<ARTrackedImage> eventArgs)
+    {
+        // Imágenes recién añadidas
         foreach (var trackedImage in eventArgs.added)
         {
-            UpdateTrackedImages(trackedImage);
+            UpdateTrackedImage(trackedImage);
         }
+
+        // Imágenes actualizadas
         foreach (var trackedImage in eventArgs.updated)
         {
-            UpdateTrackedImages(trackedImage);
+            UpdateTrackedImage(trackedImage);
         }
-        foreach (var trackedImage in eventArgs.removed)
+
+        // 🔥 FIX: Imágenes removidas - usar .Value para acceder al ARTrackedImage
+        foreach (var trackedImagePair in eventArgs.removed)
         {
-            UpdateTrackedImages(trackedImage.Value);
+            RemoveTrackedImage(trackedImagePair.Value);
         }
     }
-    private void UpdateTrackedImages(ARTrackedImage trackedImage)
+
+    private void UpdateTrackedImage(ARTrackedImage trackedImage)
     {
-        if (trackedImage == null) return;
-        if (trackedImage.trackingState is TrackingState.Limited or TrackingState.None)
-        {
-            _arObjects[trackedImage.referenceImage.name].gameObject.SetActive(false);
-            return;
-        }
+        string imageName = trackedImage.referenceImage.name;
 
-        _arObjects[trackedImage.referenceImage.name].gameObject.SetActive(true);
-        _arObjects[trackedImage.referenceImage.name].transform.position = trackedImage.transform.position;
-        _arObjects[trackedImage.referenceImage.name].transform.rotation = trackedImage.transform.rotation;
-        _arObjects[trackedImage.referenceImage.name].transform.rotation = trackedImage.transform.rotation;
+        // Si la imagen está siendo rastreada
+        if (trackedImage.trackingState == TrackingState.Tracking)
+        {
+            // 🔥 NUEVO: Notificar que la imagen fue detectada
+            OnImageDetected?.Invoke(imageName, trackedImage);
+
+            // Si no existe el prefab, crearlo
+            if (!spawnedPrefabs.ContainsKey(imageName))
+            {
+                // 🔥 CORREGIDO: Buscar prefab en el diccionario manual
+                if (prefabDictionary.TryGetValue(imageName, out GameObject prefab))
+                {
+                    GameObject spawnedObject = Instantiate(prefab, trackedImage.transform);
+                    spawnedPrefabs[imageName] = spawnedObject;
+                    Debug.Log($"[MultipleImagesTracking] ✅ Prefab instanciado para: {imageName}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[MultipleImagesTracking] ⚠️ No hay prefab asignado para: {imageName}");
+                }
+            }
+            else
+            {
+                // Actualizar posición del prefab existente
+                spawnedPrefabs[imageName].transform.position = trackedImage.transform.position;
+                spawnedPrefabs[imageName].transform.rotation = trackedImage.transform.rotation;
+                spawnedPrefabs[imageName].SetActive(true);
+            }
+        }
+        else if (trackedImage.trackingState == TrackingState.Limited ||
+                 trackedImage.trackingState == TrackingState.None)
+        {
+            // 🔥 NUEVO: Notificar que se perdió el tracking
+            OnImageLost?.Invoke(imageName);
+
+            // Ocultar el prefab si el tracking es limitado o se perdió
+            if (spawnedPrefabs.ContainsKey(imageName))
+            {
+                spawnedPrefabs[imageName].SetActive(false);
+            }
+        }
     }
 
+    private void RemoveTrackedImage(ARTrackedImage trackedImage)
+    {
+        string imageName = trackedImage.referenceImage.name;
+
+        // 🔥 NUEVO: Notificar que la imagen se removió
+        OnImageLost?.Invoke(imageName);
+
+        if (spawnedPrefabs.ContainsKey(imageName))
+        {
+            Destroy(spawnedPrefabs[imageName]);
+            spawnedPrefabs.Remove(imageName);
+            Debug.Log($"[MultipleImagesTracking] 🗑️ Prefab destruido para: {imageName}");
+        }
+    }
+}
+
+// 🔥 NUEVO: Clase auxiliar para mapear imágenes a prefabs en el Inspector
+[System.Serializable]
+public class ImagePrefabPair
+{
+    [Tooltip("Nombre de la imagen en la Reference Image Library")]
+    public string imageName;
+
+    [Tooltip("Prefab a instanciar cuando se detecte esta imagen")]
+    public GameObject prefab;
 }

@@ -14,4 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: CG
   displayName: Computacion Grafica
+  arImageName: CG
   artwork: {fileID: 21300000, guid: bd2ccc4a2aa502f4b9e012db0edec919, type: 3}

@@ -14,4 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   id: PAIM
   displayName: Procesamiento y Analisis de Informacion Multimedia
+  arImageName: PAIM
   artwork: {fileID: 21300000, guid: 276d1c5b3deed4d4fa56b5065765b4c6, type: 3}

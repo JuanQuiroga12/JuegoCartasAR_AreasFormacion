@@ -130,7 +130,7 @@ GameObject:
   - component: {fileID: 108976784}
   - component: {fileID: 108976786}
   - component: {fileID: 108976785}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ScanProgressBar_Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -206,7 +206,7 @@ GameObject:
   - component: {fileID: 222852704}
   - component: {fileID: 222852703}
   - component: {fileID: 222852702}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: CancelScanButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -356,6 +356,8 @@ MonoBehaviour:
   currentPlayerText: {fileID: 1860017207}
   scanPromptPanel: {fileID: 559362502}
   arScanManager: {fileID: 492559237}
+  arSession: {fileID: 663644590}
+  arTrackedImageManager: {fileID: 1690845872}
   isMultiplayer: 1
   playerNames:
   - Jugador 1
@@ -388,7 +390,7 @@ GameObject:
   - component: {fileID: 348420431}
   - component: {fileID: 348420433}
   - component: {fileID: 348420432}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: CancelScanButton_Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -524,7 +526,7 @@ GameObject:
   - component: {fileID: 438744933}
   - component: {fileID: 438744935}
   - component: {fileID: 438744934}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: TopPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -603,7 +605,7 @@ GameObject:
   - component: {fileID: 438866099}
   - component: {fileID: 438866098}
   - component: {fileID: 438866097}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ActionPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -760,7 +762,7 @@ GameObject:
   - component: {fileID: 559362503}
   - component: {fileID: 559362505}
   - component: {fileID: 559362504}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ScanPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -836,7 +838,7 @@ GameObject:
   - component: {fileID: 663644588}
   - component: {fileID: 663644590}
   - component: {fileID: 663644589}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: AR Session
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -894,7 +896,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 680107773}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: Camera Offset
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -963,7 +965,7 @@ GameObject:
   - component: {fileID: 788000527}
   - component: {fileID: 788000529}
   - component: {fileID: 788000528}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: EndTurnButton_Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1099,7 +1101,7 @@ GameObject:
   - component: {fileID: 835181832}
   - component: {fileID: 835181834}
   - component: {fileID: 835181833}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ScanProgressBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1397,7 +1399,6 @@ RectTransform:
   - {fileID: 438744933}
   - {fileID: 438866096}
   - {fileID: 559362503}
-  - {fileID: 1407774823}
   - {fileID: 1706473613}
   - {fileID: 721207347}
   - {fileID: 1304359980}
@@ -1424,7 +1425,7 @@ GameObject:
   - component: {fileID: 1154869946}
   - component: {fileID: 1154869948}
   - component: {fileID: 1154869947}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: TimerText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1578,7 +1579,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 42f21b03d5b7e374abb14852e5cfe80e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allCards: []
+  allCards:
+  - {fileID: 11400000, guid: 17df3e678d2490e4d85db6effef2ccaf, type: 2}
+  - {fileID: 11400000, guid: 23a3ffd80a3aa374eb4e1cbe85b94769, type: 2}
+  - {fileID: 11400000, guid: 3067fe7f180041d4fb8d920607730b07, type: 2}
+  - {fileID: 11400000, guid: 6f76d42e722c4ae45b9726699e849296, type: 2}
+  - {fileID: 11400000, guid: 28274397020682740b9372d0b01d27bf, type: 2}
+  - {fileID: 11400000, guid: 988bacf742c0cc945b439a88adfe8aed, type: 2}
+  - {fileID: 11400000, guid: 0ddf15fa4e1d5a041b5157f87720b3a5, type: 2}
+  - {fileID: 11400000, guid: a4cef4c106535f64e80b34cd5d6f88d6, type: 2}
+  - {fileID: 11400000, guid: 7c906c5eb12e32a47bd581eac404ec39, type: 2}
+  - {fileID: 11400000, guid: e8ff7ba9493f16040a874f8b9ceb95ab, type: 2}
+  - {fileID: 11400000, guid: 582b76cb8b9948f4b80de3eba8bb23f3, type: 2}
+  - {fileID: 11400000, guid: 2d11e344c70b1d842b3cb007e42452d7, type: 2}
+  - {fileID: 11400000, guid: cbec12123bb4a2c43a8c3ed494d199aa, type: 2}
+  - {fileID: 11400000, guid: 22a23976556224a4d85ab4e23a2f6d15, type: 2}
+  - {fileID: 11400000, guid: 51278b797d24391438ebf34aac929a66, type: 2}
+  - {fileID: 11400000, guid: be3a5326f88f42c4cb1cb42fa7cc48a4, type: 2}
+  - {fileID: 11400000, guid: b91c39a6cc67d074287209ad229adcb6, type: 2}
+  - {fileID: 11400000, guid: 9ab0a1585ef61d2438038e6e953c8ed8, type: 2}
+  - {fileID: 11400000, guid: 0a2feec7a00d4ae4b9c6802921e98e9c, type: 2}
+  - {fileID: 11400000, guid: b87b82f2c47df194090dac46f2acbcd3, type: 2}
+  - {fileID: 11400000, guid: ce4021fa7f56b2443acacc9ab004fe29, type: 2}
+  - {fileID: 11400000, guid: 2a7eea39d6a650248ac3f24e431ffa16, type: 2}
 --- !u!4 &1179995028
 Transform:
   m_ObjectHideFlags: 0
@@ -1606,7 +1629,7 @@ GameObject:
   - component: {fileID: 1289300270}
   - component: {fileID: 1289300269}
   - component: {fileID: 1289300268}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: EndTurnButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1859,7 +1882,7 @@ GameObject:
   - component: {fileID: 1309416331}
   - component: {fileID: 1309416333}
   - component: {fileID: 1309416332}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ScanSuccessIndicator
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2074,7 +2097,7 @@ GameObject:
   - component: {fileID: 1359819723}
   - component: {fileID: 1359819725}
   - component: {fileID: 1359819724}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ScanContent
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2141,81 +2164,6 @@ CanvasRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1359819722}
-  m_CullTransparentMesh: 1
---- !u!1 &1407774822
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1407774823}
-  - component: {fileID: 1407774825}
-  - component: {fileID: 1407774824}
-  m_Layer: 5
-  m_Name: Panel
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &1407774823
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1407774822}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1113897002}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1407774824
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1407774822}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!222 &1407774825
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1407774822}
   m_CullTransparentMesh: 1
 --- !u!1 &1541964086
 GameObject:
@@ -2595,7 +2543,7 @@ GameObject:
   - component: {fileID: 1690845873}
   - component: {fileID: 1690845872}
   - component: {fileID: 1690845871}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: XR Origin
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2630,29 +2578,30 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b795d3c58859cf48b48f38ff86279bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefabsToSpawn:
-  - {fileID: 9157129044500559755, guid: bd2078ae5933b36458240e993fc5a5b6, type: 3}
-  - {fileID: 4694049566284965854, guid: f80f3c059f11091459b5880355f13608, type: 3}
-  - {fileID: 8201884553322445856, guid: 40c0a7e23f311c0478259be789b7a5e7, type: 3}
-  - {fileID: 2313014734059486783, guid: 50b9c8992aaac7c4bb996fef536114c9, type: 3}
-  - {fileID: 7025568328742802355, guid: ebc7fe2e3c58c2948ba278e9642b0bb3, type: 3}
-  - {fileID: 3353100094689238514, guid: a39f8199eadd67d47ab981ca23922550, type: 3}
-  - {fileID: 1431295608991786595, guid: 8c04032f088896842b70aac360155bbc, type: 3}
-  - {fileID: 4105071529992996546, guid: fb6dc72d37c1eb943a3039e6e044312f, type: 3}
-  - {fileID: 2158488405644324696, guid: 7743f1b4f8f6df24eadafdcc18bdd721, type: 3}
-  - {fileID: 1455640172764671185, guid: ff750d4639079814c83d5a2a8591e0a5, type: 3}
-  - {fileID: 3658233278688752119, guid: 7027cea75708b30488c6a681043913d1, type: 3}
-  - {fileID: 1839422316098731222, guid: 1e733d780c912a848b57ec2e0e1e300b, type: 3}
-  - {fileID: 7368629208295596298, guid: 10bd7be4bfb8aaf47b7b262a979a00a6, type: 3}
-  - {fileID: 7781033832246123267, guid: 6931e1d37d6b9374cafeaaf86d37b537, type: 3}
-  - {fileID: 2500942162433549010, guid: 678b8296451e3f641bc9e9f0da9f5f4b, type: 3}
-  - {fileID: 2624172761079111991, guid: db4afbc703643a443afa667480bb3faf, type: 3}
-  - {fileID: 3384483365194740510, guid: aeb2ec251e466584fba97e475d86c6d1, type: 3}
-  - {fileID: 158854470296697858, guid: 482220bbf4a59af46a9f158aab1c7874, type: 3}
-  - {fileID: 1673965489362623641, guid: 22a69080079bac04d9460f9b5b4bba9a, type: 3}
-  - {fileID: 4951808560449179268, guid: 1b7a4d62a0d183e4eabcd342f6e4e9df, type: 3}
-  - {fileID: 1009807806646948558, guid: 6358056f44656ff45b13a857ee9a4129, type: 3}
-  - {fileID: 5317009106082259939, guid: 0314d036712dbc345b7784d6f9c2a6ee, type: 3}
+  trackedImageManager: {fileID: 1690845872}
+  imagePrefabMapping:
+  - imageName: LG
+    prefab: {fileID: 2313014734059486783, guid: 50b9c8992aaac7c4bb996fef536114c9, type: 3}
+  - imageName: D
+    prefab: {fileID: 7025568328742802355, guid: ebc7fe2e3c58c2948ba278e9642b0bb3, type: 3}
+  - imageName: CG
+    prefab: {fileID: 3353100094689238514, guid: a39f8199eadd67d47ab981ca23922550, type: 3}
+  - imageName: AM
+    prefab: {fileID: 1431295608991786595, guid: 8c04032f088896842b70aac360155bbc, type: 3}
+  - imageName: CN
+    prefab: {fileID: 4105071529992996546, guid: fb6dc72d37c1eb943a3039e6e044312f, type: 3}
+  - imageName: PD
+    prefab: {fileID: 2158488405644324696, guid: 7743f1b4f8f6df24eadafdcc18bdd721, type: 3}
+  - imageName: DS
+    prefab: {fileID: 1455640172764671185, guid: ff750d4639079814c83d5a2a8591e0a5, type: 3}
+  - imageName: AV
+    prefab: {fileID: 3658233278688752119, guid: 7027cea75708b30488c6a681043913d1, type: 3}
+  - imageName: CE
+    prefab: {fileID: 1839422316098731222, guid: 1e733d780c912a848b57ec2e0e1e300b, type: 3}
+  - imageName: PAIM
+    prefab: {fileID: 1009807806646948558, guid: 6358056f44656ff45b13a857ee9a4129, type: 3}
+  - imageName: TD
+    prefab: {fileID: 5317009106082259939, guid: 0314d036712dbc345b7784d6f9c2a6ee, type: 3}
 --- !u!114 &1690845872
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2940,7 +2889,7 @@ GameObject:
   - component: {fileID: 1823671893}
   - component: {fileID: 1823671892}
   - component: {fileID: 1823671891}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: DiscardButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3060,7 +3009,7 @@ GameObject:
   - component: {fileID: 1860017206}
   - component: {fileID: 1860017208}
   - component: {fileID: 1860017207}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: CurrentPlayerText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3196,7 +3145,7 @@ GameObject:
   - component: {fileID: 1953677337}
   - component: {fileID: 1953677339}
   - component: {fileID: 1953677338}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: DiscardButton_Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3333,7 +3282,7 @@ GameObject:
   - component: {fileID: 2016996788}
   - component: {fileID: 2016996787}
   - component: {fileID: 2016996786}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ScanButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3457,7 +3406,7 @@ GameObject:
   - component: {fileID: 2031057851}
   - component: {fileID: 2031057850}
   - component: {fileID: 2031057849}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: CameraXR
   m_TagString: MainCamera
   m_Icon: {fileID: 0}
@@ -3727,7 +3676,7 @@ GameObject:
   - component: {fileID: 2067782916}
   - component: {fileID: 2067782918}
   - component: {fileID: 2067782917}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: RoundText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3991,7 +3940,7 @@ GameObject:
   - component: {fileID: 2108492631}
   - component: {fileID: 2108492633}
   - component: {fileID: 2108492632}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ScanButton_Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4127,7 +4076,7 @@ GameObject:
   - component: {fileID: 2146674678}
   - component: {fileID: 2146674680}
   - component: {fileID: 2146674679}
-  m_Layer: 0
+  m_Layer: 5
   m_Name: ScanInstructionText
   m_TagString: Untagged
   m_Icon: {fileID: 0}

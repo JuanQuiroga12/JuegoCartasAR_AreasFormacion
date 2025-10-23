@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "464578915525",
+    "firebase_url": "https://proyecto-cartas-ar-default-rtdb.firebaseio.com",
     "project_id": "proyecto-cartas-ar",
     "storage_bucket": "proyecto-cartas-ar.firebasestorage.app"
   },

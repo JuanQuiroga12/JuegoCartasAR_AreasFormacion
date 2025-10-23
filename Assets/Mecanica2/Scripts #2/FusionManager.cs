@@ -31,12 +31,34 @@ public class FusionManager : MonoBehaviour
     // Variable para almacenar el último resultado de fusión (para multijugador)
     private CardData lastFusionResult = null;
 
+    // 🔥 NUEVO: Variable para controlar si el jugador puede interactuar
+    private bool canInteract = true;
+
     void Start()
     {
         gameManager = Object.FindFirstObjectByType<GameManager>();
         SetupHand();
         RefreshFusionButton();
         ClearResultPanel();
+    }
+
+    // 🔥 NUEVO: Método para habilitar/deshabilitar interacciones
+    public void SetInteractionEnabled(bool enabled)
+    {
+        canInteract = enabled;
+        RefreshFusionButton();
+
+        // Deshabilitar selección de cartas si no es el turno
+        if (!enabled)
+        {
+            // Deseleccionar todas las cartas
+            foreach (var card in _selected.ToList())
+            {
+                card.SetSelectedFromManager(false);
+            }
+            _selected.Clear();
+            _selectionOrder.Clear();
+        }
     }
 
     private void SetupHand()
@@ -112,6 +134,14 @@ public class FusionManager : MonoBehaviour
 
     public void NotifySelectionChanged(CardView view, bool selected)
     {
+        // 🔥 NUEVO: No permitir selección si no es el turno del jugador
+        if (!canInteract)
+        {
+            Debug.LogWarning("[FusionManager] No puedes seleccionar cartas cuando no es tu turno");
+            view.SetSelectedFromManager(false); // Forzar deselección
+            return;
+        }
+
         // Si estamos en modo descarte, manejar diferente
         if (isDiscardMode)
         {
@@ -175,8 +205,11 @@ public class FusionManager : MonoBehaviour
 
     private void RefreshFusionButton()
     {
-        // Botón activo solo si hay exactamente 2 seleccionadas y la combinación existe
-        if (_selected.Count == 2 && fusionDatabase != null)
+        // 🔥 MODIFICADO: Botón activo solo si:
+        // 1. Es el turno del jugador (canInteract)
+        // 2. Hay exactamente 2 cartas seleccionadas
+        // 3. La combinación existe en la base de datos
+        if (canInteract && _selected.Count == 2 && fusionDatabase != null)
         {
             var duo = GetSelectedData();
             var canFuse = fusionDatabase.TryFuse(duo) != null;
@@ -195,6 +228,13 @@ public class FusionManager : MonoBehaviour
 
     public void OnClickFusionar()
     {
+        // 🔥 NUEVO: Verificar que sea el turno del jugador
+        if (!canInteract)
+        {
+            Debug.LogWarning("[FusionManager] No puedes fusionar cuando no es tu turno");
+            return;
+        }
+
         if (_selected.Count != 2 || fusionDatabase == null) return;
 
         var duo = GetSelectedData();

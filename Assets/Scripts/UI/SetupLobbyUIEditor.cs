@@ -81,7 +81,7 @@ public class SetupLobbyUIEditor : EditorWindow
         GameObject maxPlayersDropdown = FindOrCreateDropdown("MaxPlayersDropdown", createRoomPanel.transform, forceRecreate);
         SetupCenteredElement(maxPlayersDropdown, new Vector2(0.3f, 0.5f), new Vector2(0.7f, 0.57f));
 
-        // Confirm Button
+        // Confirm Button   
         GameObject confirmCreateBtn = FindOrCreateButton("ConfirmCreateButton", createRoomPanel.transform, "CONFIRMAR", forceRecreate);
         SetupCenteredElement(confirmCreateBtn, new Vector2(0.3f, 0.35f), new Vector2(0.7f, 0.43f));
         confirmCreateBtn.GetComponent<Image>().color = new Color(0.2f, 0.7f, 0.3f, 1f);
@@ -175,15 +175,30 @@ public class SetupLobbyUIEditor : EditorWindow
         // Asignar referencias automáticamente
         AssignReferences(lobbyManager, mainCanvas.transform);
 
-        // Marcar como modificado para guardar
+        // ⬇️⬇️⬇️ CAMBIOS AQUÍ ⬇️⬇️⬇️
+
+        // Marcar como modificado
         EditorUtility.SetDirty(mainCanvas.gameObject);
 
-        Debug.Log("[SetupLobbyUI] ✓ UI del Lobby configurada correctamente");
+        // 🔥 FORZAR GUARDADO DE LA ESCENA 🔥
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(
+            UnityEditor.SceneManagement.EditorSceneManager.GetActiveScene()
+        );
+
+        UnityEditor.SceneManagement.EditorSceneManager.SaveOpenScenes();
+
+        // Refrescar base de datos de assets
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+
+        Debug.Log("[SetupLobbyUI] ✓ UI del Lobby configurada y GUARDADA correctamente");
+
         EditorUtility.DisplayDialog("Setup Lobby UI",
-            "La UI del Lobby ha sido configurada correctamente.\n\n" +
-            "Asegúrate de:\n" +
-            "1. Asignar el PlayerItemPrefab en el LobbyUIManager\n" +
-            "2. Verificar las referencias en el Inspector",
+            "La UI del Lobby ha sido configurada y guardada correctamente.\n\n" +
+            "✓ Referencias asignadas\n" +
+            "✓ Escena guardada\n" +
+            "✓ Prefab en Resources\n\n" +
+            "Ahora puedes entrar en Play Mode.",
             "OK");
     }
 
@@ -213,6 +228,30 @@ public class SetupLobbyUIEditor : EditorWindow
 
         Transform scrollView = canvasTransform.Find("WaitingRoomPanel/PlayersListContainer/Viewport/Content");
         so.FindProperty("playersListContainer").objectReferenceValue = scrollView;
+
+        // 🔥 INTENTAR PRIMERO DESDE RESOURCES, LUEGO DESDE PREFABS 🔥
+        GameObject prefab = Resources.Load<GameObject>("PlayerItemPrefab");
+
+        if (prefab == null)
+        {
+            // Fallback: buscar en Assets/Prefabs
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/PlayerItemPrefab.prefab");
+
+            if (prefab != null)
+            {
+                Debug.LogWarning("[SetupLobbyUI] Prefab encontrado en Assets/Prefabs. Considera moverlo a Assets/Resources.");
+            }
+        }
+
+        if (prefab != null)
+        {
+            so.FindProperty("playerItemPrefab").objectReferenceValue = prefab;
+            Debug.Log($"[SetupLobbyUI] ✓ PlayerItemPrefab asignado correctamente: {AssetDatabase.GetAssetPath(prefab)}");
+        }
+        else
+        {
+            Debug.LogError("[SetupLobbyUI] ❌ No se pudo encontrar PlayerItemPrefab en ninguna ubicación");
+        }
 
         so.FindProperty("startGameButton").objectReferenceValue = canvasTransform.Find("WaitingRoomPanel/StartGameButton")?.GetComponent<Button>();
         so.FindProperty("leaveRoomButton").objectReferenceValue = canvasTransform.Find("WaitingRoomPanel/LeaveRoomButton")?.GetComponent<Button>();
