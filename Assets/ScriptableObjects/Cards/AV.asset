@@ -15,4 +15,4 @@ MonoBehaviour:
   id: AV
   displayName: Audio y Video
   arImageName: AV
-  artwork: {fileID: 21300000, guid: c56f233955b2d5141855d16b27acaaff, type: 3}
+  artwork: {fileID: 21300000, guid: 66f14a8d53711654f96c7b972bb9dc82, type: 3}

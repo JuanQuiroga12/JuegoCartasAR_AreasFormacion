@@ -15,4 +15,4 @@ MonoBehaviour:
   id: EIA
   displayName: Electiva de Ingenieria Aplicada
   arImageName: EIA
-  artwork: {fileID: 21300000, guid: e841769a0a0b4f14abd47977738eaf24, type: 3}
+  artwork: {fileID: 21300000, guid: 5b311526f42231d4185a940846315170, type: 3}

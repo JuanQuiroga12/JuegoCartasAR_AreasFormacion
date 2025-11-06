@@ -15,4 +15,4 @@ MonoBehaviour:
   id: REN
   displayName: Render
   arImageName: REN
-  artwork: {fileID: 21300000, guid: cc1212d54417b94488b87d918dd606ee, type: 3}
+  artwork: {fileID: 21300000, guid: b2f98979b5af539449cf39ba4f331e5b, type: 3}

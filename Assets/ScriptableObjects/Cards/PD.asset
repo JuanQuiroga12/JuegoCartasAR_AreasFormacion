@@ -15,4 +15,4 @@ MonoBehaviour:
   id: PD
   displayName: Procesamiento Digital
   arImageName: PD
-  artwork: {fileID: 21300000, guid: 413f0cd94cce65e4a98ac5168d95ce15, type: 3}
+  artwork: {fileID: 21300000, guid: 890e49cdff4cd21439d7be0e24960902, type: 3}

@@ -15,4 +15,4 @@ MonoBehaviour:
   id: PM
   displayName: Produccion Multimedia
   arImageName: PM
-  artwork: {fileID: 21300000, guid: ce477307f47eba54c83cfeaaf70cfecf, type: 3}
+  artwork: {fileID: 21300000, guid: 879ab635f77d4f84f815bf832e7c3eef, type: 3}

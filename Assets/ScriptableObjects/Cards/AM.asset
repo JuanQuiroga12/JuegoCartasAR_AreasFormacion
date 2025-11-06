@@ -15,4 +15,4 @@ MonoBehaviour:
   id: AM
   displayName: Animacion y Modelado
   arImageName: AM
-  artwork: {fileID: 21300000, guid: e9d46aa4548f0da42a85f122dee4a254, type: 3}
+  artwork: {fileID: 21300000, guid: 04b81bbd5b16e8b4e818c72243726833, type: 3}

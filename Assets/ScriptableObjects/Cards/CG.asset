@@ -15,4 +15,4 @@ MonoBehaviour:
   id: CG
   displayName: Computacion Grafica
   arImageName: CG
-  artwork: {fileID: 21300000, guid: bd2ccc4a2aa502f4b9e012db0edec919, type: 3}
+  artwork: {fileID: 21300000, guid: bda2993cebddb5142860eb70a8946cf3, type: 3}

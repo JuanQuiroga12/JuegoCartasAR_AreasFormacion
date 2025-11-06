@@ -15,4 +15,4 @@ MonoBehaviour:
   id: LG
   displayName: Lenguaje Grafico
   arImageName: LG
-  artwork: {fileID: 21300000, guid: c992d23d45176104f9fa6b64cfe9d444, type: 3}
+  artwork: {fileID: 21300000, guid: 3899549bba3edee4fa79d1cc944cbda3, type: 3}
