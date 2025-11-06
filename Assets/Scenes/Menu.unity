@@ -649,8 +649,20 @@ PrefabInstance:
       value: MODO REALIDAD AUMENTADA
       objectReference: {fileID: 0}
     - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 3574149851590270002, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_VerticalAlignment
       value: 512
+      objectReference: {fileID: 0}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 276114377226810701, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_Name
@@ -737,6 +749,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6866599097631056878, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 1.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 6866599097631056878, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -16
       objectReference: {fileID: 0}
@@ -754,6 +770,10 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 3574149851590270002, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 7616007275348197064, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_HorizontalAlignment
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7616007275348197064, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
@@ -2018,6 +2038,18 @@ PrefabInstance:
       propertyPath: m_text
       value: "PREPARACI\xD3N\nDEL JUEGO"
       objectReference: {fileID: 0}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 3574149851590270002, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 276114377226810701, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_Name
       value: InfoSection
@@ -2115,6 +2147,10 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 3574149851590270002, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 7616007275348197064, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_HorizontalAlignment
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7616007275348197064, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
@@ -3162,11 +3198,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_text
-      value: REGLAS DE FUSION
+      value: "REGLAS DE FUSI\xD3N"
       objectReference: {fileID: 0}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 3574149851590270002, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
     - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_VerticalAlignment
       value: 1024
+      objectReference: {fileID: 0}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 276114377226810701, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_Name
@@ -4551,7 +4599,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.40000343, y: 24.8}
+  m_AnchoredPosition: {x: 6, y: 24.8}
   m_SizeDelta: {x: 220.72696, y: 171.6585}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2020396976
@@ -4610,7 +4658,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 2
+  m_HorizontalAlignment: 1
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -4668,8 +4716,20 @@ PrefabInstance:
       value: FLUJO DE TURNO
       objectReference: {fileID: 0}
     - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 3574149851590270002, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_VerticalAlignment
       value: 512
+      objectReference: {fileID: 0}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 276114377226810701, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_Name
@@ -4755,6 +4815,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6866599097631056878, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 1.5
+      objectReference: {fileID: 0}
     - target: {fileID: 7616007275348197064, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_text
       value: "1. Robar 1 carta del mazo.\n2. Intentar fusionar.\n3. Gestionar mano:\n
@@ -4769,6 +4833,10 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 3574149851590270002, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 7616007275348197064, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_HorizontalAlignment
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7616007275348197064, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_hasFontAssetChanged
       value: 0
@@ -5075,6 +5143,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1549262458}
     m_Modifications:
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_fontAsset
+      value: 
+      objectReference: {fileID: 11400000, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 3574149851590270002, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
+    - target: {fileID: 12264751105361799, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_hasFontAssetChanged
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 276114377226810701, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_Name
       value: InfoSection
@@ -5176,8 +5256,12 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 3574149851590270002, guid: 8439d8a74a68f0646a4e271325f78378, type: 2}
     - target: {fileID: 7616007275348197064, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
+      propertyPath: m_VerticalAlignment
+      value: 512
+      objectReference: {fileID: 0}
+    - target: {fileID: 7616007275348197064, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_HorizontalAlignment
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7616007275348197064, guid: 3c504ba2eb72b22489c25805237b974c, type: 3}
       propertyPath: m_hasFontAssetChanged
