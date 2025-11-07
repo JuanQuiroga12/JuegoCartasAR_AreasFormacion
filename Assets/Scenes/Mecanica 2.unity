@@ -2169,6 +2169,7 @@ GameObject:
   - component: {fileID: 1359819723}
   - component: {fileID: 1359819725}
   - component: {fileID: 1359819724}
+  - component: {fileID: 1359819726}
   m_Layer: 5
   m_Name: ScanContent
   m_TagString: Untagged
@@ -2237,6 +2238,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1359819722}
   m_CullTransparentMesh: 1
+--- !u!114 &1359819726
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1359819722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6226916a2af908241b256719ee82987d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  borderColor: {r: 0.40482342, g: 1, b: 0, a: 1}
+  borderWidth: 3
+  animateBorder: 1
+  pulseSpeed: 2
 --- !u!1 &1440787946
 GameObject:
   m_ObjectHideFlags: 0
