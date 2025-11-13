@@ -15,4 +15,4 @@ MonoBehaviour:
   id: SI
   displayName: Sistemas Interactivos
   arImageName: SI
-  artwork: {fileID: 21300000, guid: b46a39c5ca4131e49b163f4b1eed2563, type: 3}
+  artwork: {fileID: 21300000, guid: 7bf79b690295bfa4aacceb31c11b414c, type: 3}

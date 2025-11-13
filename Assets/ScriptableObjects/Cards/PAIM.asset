@@ -15,4 +15,4 @@ MonoBehaviour:
   id: PAIM
   displayName: Procesamiento y Analisis de Informacion Multimedia
   arImageName: PAIM
-  artwork: {fileID: 21300000, guid: 786e4f441ad55334a8422705f5e5fe64, type: 3}
+  artwork: {fileID: 21300000, guid: 8400de671e491454ab80dfd51ab2db77, type: 3}
