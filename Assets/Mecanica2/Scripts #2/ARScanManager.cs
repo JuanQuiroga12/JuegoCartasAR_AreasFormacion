@@ -30,16 +30,17 @@ public class ARScanManager : MonoBehaviour
     private GameManager gameManager;
     private FusionManager fusionManager;
 
-    // 🔥 NUEVO: Referencia al MultipleImagesTrackingManager
     private MultipleImagesTrackingManager imageTrackingManager;
 
     private Dictionary<string, CardData> imageToCardMapping = new Dictionary<string, CardData>();
+
+    // 🔥 NUEVO: Flag para prevenir procesamiento duplicado
+    private bool isProcessingCard = false;
 
     void Awake()
     {
         Debug.Log("[ARScanManager] ⚙️ Awake iniciando...");
 
-        // Buscar referencias si no están asignadas
         if (arSession == null)
         {
             arSession = Object.FindFirstObjectByType<ARSession>();
@@ -64,7 +65,6 @@ public class ARScanManager : MonoBehaviour
             Debug.Log($"[ARScanManager] GameManager encontrado: {gameManager != null}");
         }
 
-        // 🔥 NUEVO: Suscribirse a eventos del MultipleImagesTrackingManager
         imageTrackingManager = Object.FindFirstObjectByType<MultipleImagesTrackingManager>();
         if (imageTrackingManager != null)
         {
@@ -77,7 +77,6 @@ public class ARScanManager : MonoBehaviour
             Debug.LogError("[ARScanManager] ❌ MultipleImagesTrackingManager NO encontrado!");
         }
 
-        // 🔥 CRÍTICO: Inicializar el mapeo de imágenes
         Debug.Log("[ARScanManager] 🔄 Llamando InitializeImageMapping()...");
         InitializeImageMapping();
         Debug.Log("[ARScanManager] ✅ Awake completado");
@@ -86,7 +85,6 @@ public class ARScanManager : MonoBehaviour
 
     private void InitializeImageMapping()
     {
-        // 🔥 AGREGAR LOGS CRÍTICOS
         Debug.Log($"[ARScanManager] 🔧 INICIALIZANDO MAPEO");
 
         if (cardDatabase == null)
@@ -108,7 +106,6 @@ public class ARScanManager : MonoBehaviour
         {
             if (card != null)
             {
-                // 🔥 CORREGIDO: Usar arImageName en lugar de id
                 string mapKey = string.IsNullOrEmpty(card.arImageName) ? card.id : card.arImageName;
                 imageToCardMapping[mapKey] = card;
 
@@ -126,7 +123,6 @@ public class ARScanManager : MonoBehaviour
 
         Debug.Log($"[ARScanManager] 📊 Total mapeado: {imageToCardMapping.Count} cartas");
 
-        // 🔥 MOSTRAR EL CONTENIDO FINAL DEL DICCIONARIO
         Debug.Log("[ARScanManager] 📋 Contenido final de imageToCardMapping:");
         foreach (var kvp in imageToCardMapping)
         {
@@ -144,8 +140,8 @@ public class ARScanManager : MonoBehaviour
         currentScanTime = 0f;
         pendingCard = null;
         lastTrackedImageName = "";
+        isProcessingCard = false; // 🔥 RESETEAR FLAG
 
-        // Activar UI de escaneo
         if (scanPanel != null)
         {
             scanPanel.SetActive(true);
@@ -169,7 +165,6 @@ public class ARScanManager : MonoBehaviour
 
         EnableAR();
 
-        // 🔥 NUEVO: Suscribirse a eventos del MultipleImagesTrackingManager
         if (imageTrackingManager != null)
         {
             imageTrackingManager.OnImageDetected += OnImageDetectedFromTracking;
@@ -184,13 +179,13 @@ public class ARScanManager : MonoBehaviour
         isScanning = false;
         currentScanTime = 0f;
         pendingCard = null;
+        isProcessingCard = false; // 🔥 RESETEAR FLAG
 
         if (scanPanel != null)
         {
             scanPanel.SetActive(false);
         }
 
-        // 🔥 NUEVO: Desuscribirse de eventos
         if (imageTrackingManager != null)
         {
             imageTrackingManager.OnImageDetected -= OnImageDetectedFromTracking;
@@ -215,12 +210,12 @@ public class ARScanManager : MonoBehaviour
 
     private void DisableAR()
     {
-        // Mantener AR activa (ya está comentado en tu código original)
+        // Mantener AR activa
     }
 
     void Update()
     {
-        if (isScanning && pendingCard != null)
+        if (isScanning && pendingCard != null && !isProcessingCard) // 🔥 VERIFICAR FLAG
         {
             UpdateScanProgress();
         }
@@ -243,20 +238,18 @@ public class ARScanManager : MonoBehaviour
         }
     }
 
-    // 🔥 NUEVO: Método que recibe notificaciones del MultipleImagesTrackingManager
     private void OnImageDetectedFromTracking(string imageName, ARTrackedImage trackedImage)
     {
-        if (!isScanning) return;
+        if (!isScanning || isProcessingCard) return; // 🔥 VERIFICAR FLAG
 
         Debug.Log($"[ARScanManager] 🎯 Imagen detectada por tracker: {imageName}");
 
         HandleTrackedImage(imageName);
     }
 
-    // 🔥 NUEVO: Método que recibe pérdida de tracking
     private void OnImageLostFromTracking(string imageName)
     {
-        if (!isScanning) return;
+        if (!isScanning || isProcessingCard) return; // 🔥 VERIFICAR FLAG
 
         if (imageName == lastTrackedImageName)
         {
@@ -265,34 +258,16 @@ public class ARScanManager : MonoBehaviour
         }
     }
 
-    // 🔥 MODIFICADO: Ahora recibe solo el nombre de la imagen
     private void HandleTrackedImage(string imageName)
     {
-        if (!isScanning) return;
-
-        // 🔥 DEBUG ULTRA DETALLADO
-        Debug.Log($"═══════════════════════════════════════");
-        Debug.Log($"[ARScanManager] 🔍 IMAGEN DETECTADA");
-        Debug.Log($"[ARScanManager] Nombre recibido: '{imageName}'");
-        Debug.Log($"[ARScanManager] Longitud del nombre: {imageName.Length}");
-        
-        Debug.Log($"[ARScanManager] 📋 CARTAS EN MAPPING:");
-        foreach (var kvp in imageToCardMapping)
-        {
-            Debug.Log($"   Key: '{kvp.Key}' (len={kvp.Key.Length}) → {kvp.Value.displayName}");
-            Debug.Log($"   Coincide? {kvp.Key == imageName}");
-            Debug.Log($"   Coincide (IgnoreCase)? {string.Equals(kvp.Key, imageName, System.StringComparison.OrdinalIgnoreCase)}");
-        }
-        Debug.Log($"═══════════════════════════════════════");
+        if (!isScanning || isProcessingCard) return; // 🔥 VERIFICAR FLAG
 
         // Verificar si es una nueva carta o la misma
         if (imageName != lastTrackedImageName)
         {
-            // Nueva carta detectada
             lastTrackedImageName = imageName;
             currentScanTime = 0f;
 
-            // Buscar la CardData correspondiente
             if (imageToCardMapping.TryGetValue(imageName, out CardData card))
             {
                 pendingCard = card;
@@ -323,11 +298,10 @@ public class ARScanManager : MonoBehaviour
 
     private void LostTracking()
     {
-        if (!isScanning) return;
+        if (!isScanning || isProcessingCard) return; // 🔥 VERIFICAR FLAG
 
         Debug.Log("[ARScanManager] 🔄 Se perdió el tracking de la carta");
 
-        // Reiniciar el escaneo
         currentScanTime = 0f;
 
         if (scanProgressBar != null)
@@ -344,13 +318,14 @@ public class ARScanManager : MonoBehaviour
 
     private void CompleteScan()
     {
-        if (pendingCard == null) return;
+        if (pendingCard == null || isProcessingCard) return; // 🔥 VERIFICAR FLAG
+
+        // 🔥 ACTIVAR FLAG INMEDIATAMENTE para prevenir duplicados
+        isProcessingCard = true;
+        isScanning = false; // 🔥 DESHABILITAR ESCANEO INMEDIATAMENTE
 
         Debug.Log($"[ARScanManager] 🎉 ¡Escaneo completado! Carta: {pendingCard.displayName}");
 
-        isScanning = false;
-
-        // Mostrar indicador de éxito
         if (scanSuccessIndicator != null)
         {
             scanSuccessIndicator.SetActive(true);
@@ -361,20 +336,11 @@ public class ARScanManager : MonoBehaviour
             scanInstructionText.text = $"¡{pendingCard.displayName} agregada a tu mano!";
         }
 
-        // 🔥 IMPORTANTE: Agregar la carta a la mano
-        if (fusionManager != null)
-        {
-            Debug.Log($"[ARScanManager] 📥 Agregando carta a la mano: {pendingCard.displayName}");
-            fusionManager.AddCardToHand(pendingCard);
-        }
-        else
-        {
-            Debug.LogError("[ARScanManager] ❌ FusionManager es null, no se puede agregar la carta");
-        }
-
-        // Notificar al GameManager
+        // 🔥 CRÍTICO: Solo notificar al GameManager, NO agregar aquí
+        // El GameManager se encargará de agregar la carta
         if (gameManager != null)
         {
+            Debug.Log($"[ARScanManager] 📤 Notificando GameManager: {pendingCard.displayName}");
             gameManager.OnCardScanned(pendingCard);
         }
         else
@@ -382,14 +348,13 @@ public class ARScanManager : MonoBehaviour
             Debug.LogError("[ARScanManager] ❌ GameManager es null");
         }
 
-        // 🔥 NUEVO: Desuscribirse de eventos después de completar
+        // Desuscribir eventos
         if (imageTrackingManager != null)
         {
             imageTrackingManager.OnImageDetected -= OnImageDetectedFromTracking;
             imageTrackingManager.OnImageLost -= OnImageLostFromTracking;
         }
 
-        // Cerrar el panel después de un delay
         StartCoroutine(CloseScanPanelDelayed());
     }
 
@@ -406,6 +371,7 @@ public class ARScanManager : MonoBehaviour
         pendingCard = null;
         lastTrackedImageName = "";
         currentScanTime = 0f;
+        isProcessingCard = false; // 🔥 RESETEAR FLAG AL FINAL
     }
 
     public bool CanScanCard(string cardId)
@@ -420,7 +386,6 @@ public class ARScanManager : MonoBehaviour
 
     void OnDestroy()
     {
-        // 🔥 NUEVO: Limpiar suscripciones al destruir
         if (imageTrackingManager != null)
         {
             imageTrackingManager.OnImageDetected -= OnImageDetectedFromTracking;

@@ -5,15 +5,16 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-// 🔥 AÑADIR ESTOS USING 🔥
 using UnityEngine.XR.ARFoundation;
 
 public class GameManager : MonoBehaviour
 {
     [Header("Configuración del Juego")]
     [SerializeField] private float turnDuration = 60f;
+    [SerializeField] private float preparationDuration = 60f;
     [SerializeField] private int maxHandSize = 3;
     [SerializeField] private int extendedHandSize = 4;
+    [SerializeField] private int initialCardsToScan = 3;
 
     [Header("Referencias")]
     [SerializeField] private FusionManager fusionManager;
@@ -25,19 +26,33 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI currentPlayerText;
     [SerializeField] private GameObject scanPromptPanel;
 
+    [Header("🔥 UI Fase de Preparación - Solo Textos")]
+    [SerializeField] private TextMeshProUGUI preparationInstructionText;
+    [SerializeField] private TextMeshProUGUI scannedCardsCountText;
+
     [Header("Sistema AR")]
     [SerializeField] private ARScanManager arScanManager;
-    // 🔥 AÑADIR REFERENCIA A LA SESIÓN AR 🔥
     [SerializeField] private ARSession arSession;
     [SerializeField] private ARTrackedImageManager arTrackedImageManager;
 
-
     [Header("Network")]
-    [SerializeField] private bool isMultiplayer = true; // Toggle para modo multijugador
+    [SerializeField] private bool isMultiplayer = true;
     private NetworkManager networkManager;
 
     [Header("Jugadores (Solo para modo local)")]
     [SerializeField] private List<string> playerNames = new List<string>() { "Jugador 1", "Jugador 2", "Jugador 3", "Jugador 4" };
+
+    // Estado de la fase de preparación
+    private enum GamePhase
+    {
+        Preparation,
+        Playing
+    }
+
+    private GamePhase currentPhase = GamePhase.Preparation;
+    private float preparationTimeRemaining;
+    private int scannedCardsCount = 0;
+    private bool isPreparationActive = false;
 
     // Estado del juego
     private int currentPlayerIndex = 0;
@@ -59,6 +74,9 @@ public class GameManager : MonoBehaviour
     public delegate void OnRoundChanged(int round);
     public static event OnRoundChanged RoundChanged;
 
+    public delegate void OnPreparationPhaseComplete();
+    public static event OnPreparationPhaseComplete PreparationPhaseComplete;
+
     void Awake()
     {
         if (isMultiplayer)
@@ -71,7 +89,6 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // 🔥 BUSCAR COMPONENTES AR SI NO ESTÁN ASIGNADOS 🔥
         if (arSession == null)
         {
             arSession = Object.FindFirstObjectByType<ARSession>();
@@ -82,14 +99,12 @@ public class GameManager : MonoBehaviour
             arTrackedImageManager = Object.FindFirstObjectByType<ARTrackedImageManager>();
         }
 
-        // 🔥 FORZAR ACTIVACIÓN DE AR AL INICIO 🔥
         StartCoroutine(EnsureAREnabled());
     }
 
-    // 🔥 NUEVA COROUTINE PARA ACTIVAR AR 🔥
     private IEnumerator EnsureAREnabled()
     {
-        yield return new WaitForSeconds(0.5f); // Esperar a que se inicialice la escena
+        yield return new WaitForSeconds(0.5f);
 
         if (arSession != null)
         {
@@ -119,7 +134,11 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        if (isTurnActive)
+        if (isPreparationActive)
+        {
+            UpdatePreparationTimer();
+        }
+        else if (isTurnActive)
         {
             UpdateTimer();
         }
@@ -131,7 +150,8 @@ public class GameManager : MonoBehaviour
         {
             networkManager.OnGameStateUpdated += OnNetworkGameStateUpdated;
             networkManager.OnTurnTimerUpdated += OnNetworkTurnTimerUpdated;
-            networkManager.OnEndTurnReceived += OnNetworkEndTurnReceived; // 🔥 NUEVO
+            networkManager.OnEndTurnReceived += OnNetworkEndTurnReceived;
+            networkManager.OnPreparationStateUpdated += OnNetworkPreparationStateUpdated;
         }
     }
 
@@ -141,26 +161,34 @@ public class GameManager : MonoBehaviour
         {
             networkManager.OnGameStateUpdated -= OnNetworkGameStateUpdated;
             networkManager.OnTurnTimerUpdated -= OnNetworkTurnTimerUpdated;
-            networkManager.OnEndTurnReceived -= OnNetworkEndTurnReceived; // 🔥 NUEVO
+            networkManager.OnEndTurnReceived -= OnNetworkEndTurnReceived;
+            networkManager.OnPreparationStateUpdated -= OnNetworkPreparationStateUpdated;
         }
     }
 
     private void InitializeGame()
     {
-        // Configurar UI inicial
+        // Ocultar TODOS los elementos de UI al inicio
         if (scanButton) scanButton.gameObject.SetActive(false);
         if (discardButton) discardButton.gameObject.SetActive(false);
+        if (endTurnButton) endTurnButton.gameObject.SetActive(false);
+        if (timerText) timerText.gameObject.SetActive(false);
+        if (roundText) roundText.gameObject.SetActive(false);
+        if (currentPlayerText) currentPlayerText.gameObject.SetActive(false);
+        if (preparationInstructionText) preparationInstructionText.gameObject.SetActive(false);
+        if (scannedCardsCountText) scannedCardsCountText.gameObject.SetActive(false);
+
+        // Configurar listeners de botones
         if (endTurnButton) endTurnButton.onClick.AddListener(OnEndTurnClick);
+        if (scanButton) scanButton.onClick.AddListener(OnScanClick);
 
         if (isMultiplayer)
         {
-            // En multijugador, esperar a que el host inicie el juego
             LoadPlayersFromNetwork();
         }
         else
         {
-            // Modo local: iniciar primera ronda inmediatamente
-            StartNewRound();
+            StartPreparationPhase();
         }
     }
 
@@ -170,10 +198,8 @@ public class GameManager : MonoBehaviour
 
         Debug.Log("[GameManager] 🔄 Cargando jugadores desde Firebase...");
 
-        // Esperar un momento para que Firebase se sincronice
         await Task.Delay(500);
 
-        // 🔥 CARGAR JUGADORES REALES DESDE FIREBASE 🔥
         if (networkManager.currentRoomRef != null)
         {
             var playersSnapshot = await networkManager.currentRoomRef.Child("players").GetValueAsync();
@@ -183,7 +209,6 @@ public class GameManager : MonoBehaviour
 
             if (playersSnapshot.Exists)
             {
-                // Crear lista temporal para ordenar por playerNumber
                 var playersList = new System.Collections.Generic.List<PlayerData>();
 
                 foreach (var playerSnap in playersSnapshot.Children)
@@ -193,10 +218,8 @@ public class GameManager : MonoBehaviour
                     allPlayers.Add(playerData);
                 }
 
-                // Ordenar por playerNumber
                 playersList.Sort((a, b) => a.playerNumber.CompareTo(b.playerNumber));
 
-                // Llenar playerNames con nombres reales
                 foreach (var player in playersList)
                 {
                     playerNames.Add(player.playerName);
@@ -209,7 +232,6 @@ public class GameManager : MonoBehaviour
             {
                 Debug.LogWarning("[GameManager] ⚠️ No se encontraron jugadores en Firebase, usando nombres genéricos");
 
-                // Fallback a nombres genéricos
                 for (int i = 0; i < 4; i++)
                 {
                     playerNames.Add($"Jugador {i + 1}");
@@ -220,7 +242,6 @@ public class GameManager : MonoBehaviour
         {
             Debug.LogError("[GameManager] ❌ currentRoomRef es null, no se pueden cargar jugadores");
 
-            // Fallback a nombres genéricos
             playerNames.Clear();
             for (int i = 0; i < 4; i++)
             {
@@ -228,28 +249,346 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Determinar índice del jugador actual
-        currentPlayerIndex = 0; // El host inicia en Firebase
+        currentPlayerIndex = 0;
 
         Debug.Log($"[GameManager] 🎮 Juego multijugador iniciado. Soy jugador #{networkManager.playerNumber}");
         Debug.Log($"[GameManager] 📋 Jugadores en partida: {string.Join(", ", playerNames)}");
 
+        StartPreparationPhase();
+    }
+
+    // ========== FASE DE PREPARACIÓN ==========
+
+    private void StartPreparationPhase()
+    {
+        Debug.Log("[GameManager] 📋 Iniciando Fase de Preparación");
+
+        currentPhase = GamePhase.Preparation;
+        isPreparationActive = true;
+        preparationTimeRemaining = preparationDuration;
+        scannedCardsCount = 0;
+
+        Debug.Log("[GameManager] 🎨 Configurando UI de preparación...");
+
+        // Mostrar timer
+        if (timerText)
+        {
+            timerText.gameObject.SetActive(true);
+            Debug.Log("[GameManager] ✓ Timer activado");
+        }
+
+        // Mostrar texto de fase
+        if (roundText)
+        {
+            roundText.text = "FASE DE PREPARACIÓN";
+            roundText.gameObject.SetActive(true);
+            Debug.Log("[GameManager] ✓ Texto de fase configurado");
+        }
+
+        // Ocultar texto de jugador actual
+        if (currentPlayerText)
+        {
+            currentPlayerText.gameObject.SetActive(false);
+            Debug.Log("[GameManager] ✓ Texto de jugador ocultado");
+        }
+
+        // Configurar botón de escaneo
+        if (scanButton)
+        {
+            scanButton.onClick.RemoveAllListeners();
+            scanButton.onClick.AddListener(OnPreparationScanClick);
+            scanButton.gameObject.SetActive(true);
+            scanButton.interactable = true;
+            Debug.Log("[GameManager] ✓ Botón de escaneo configurado y activado");
+        }
+
+        // Mostrar textos específicos de preparación
+        if (preparationInstructionText)
+        {
+            preparationInstructionText.text = $"Escanea {initialCardsToScan} cartas del mazo físico para comenzar";
+            preparationInstructionText.gameObject.SetActive(true);
+            Debug.Log("[GameManager] ✓ Texto de instrucciones activado");
+        }
+
+        UpdateScannedCardsCount();
+
+        // 🔥 CRÍTICO: Asegurar que botones de juego estén ocultos
+        if (discardButton) discardButton.gameObject.SetActive(false);
+        if (endTurnButton) endTurnButton.gameObject.SetActive(false);
+
+        // Sincronizar con Firebase
+        if (isMultiplayer && networkManager != null && networkManager.isHost)
+        {
+            _ = SyncPreparationPhaseToFirebase();
+        }
+
+        Debug.Log("[GameManager] ✅ Fase de preparación iniciada completamente");
+    }
+
+    private void OnPreparationScanClick()
+    {
+        if (scannedCardsCount >= initialCardsToScan)
+        {
+            ShowWarning($"Ya escaneaste las {initialCardsToScan} cartas iniciales");
+            return;
+        }
+
+        Debug.Log("[GameManager] 🔍 Iniciando escaneo en fase de preparación...");
+
+        if (arScanManager != null)
+        {
+            arScanManager.StartScanning();
+        }
+        else
+        {
+            ShowWarning("ARScanManager no está configurado");
+        }
+    }
+
+    public async void OnPreparationCardScanned(CardData scannedCard)
+    {
+        if (!isPreparationActive) return;
+
+        if (scannedCardsCount >= initialCardsToScan)
+        {
+            ShowWarning($"Ya escaneaste las {initialCardsToScan} cartas iniciales");
+            return;
+        }
+
+        Debug.Log($"[GameManager] 🎴 Carta escaneada en preparación: {scannedCard.displayName}");
+
+        if (fusionManager != null)
+        {
+            fusionManager.AddCardToHand(scannedCard);
+        }
+
+        scannedCardsCount++;
+        UpdateScannedCardsCount();
+
+        if (isMultiplayer && networkManager != null)
+        {
+            await networkManager.SendPreparationCardScan(scannedCard.id, scannedCardsCount);
+        }
+
+        if (scannedCardsCount >= initialCardsToScan)
+        {
+            OnPlayerCompletedPreparation();
+        }
+    }
+
+    private void UpdateScannedCardsCount()
+    {
+        if (scannedCardsCountText != null)
+        {
+            scannedCardsCountText.text = $"Cartas escaneadas: {scannedCardsCount}/{initialCardsToScan}";
+            scannedCardsCountText.gameObject.SetActive(true);
+        }
+    }
+
+    private async void OnPlayerCompletedPreparation()
+    {
+        Debug.Log("[GameManager] ✅ Jugador completó fase de preparación");
+
+        if (scanButton)
+        {
+            scanButton.interactable = false;
+        }
+
+        if (preparationInstructionText)
+        {
+            preparationInstructionText.text = "¡Listo! Esperando a otros jugadores...";
+        }
+
+        if (isMultiplayer && networkManager != null)
+        {
+            await networkManager.SendPlayerPreparationComplete();
+        }
+
+        if (!isMultiplayer)
+        {
+            CheckIfAllPlayersReady();
+        }
+    }
+
+    private void UpdatePreparationTimer()
+    {
+        preparationTimeRemaining -= Time.deltaTime;
+
+        if (timerText)
+        {
+            int minutes = Mathf.FloorToInt(preparationTimeRemaining / 60);
+            int seconds = Mathf.FloorToInt(preparationTimeRemaining % 60);
+            timerText.text = $"{minutes:00}:{seconds:00}";
+
+            if (preparationTimeRemaining <= 10f)
+            {
+                timerText.color = Color.red;
+            }
+            else if (preparationTimeRemaining <= 30f)
+            {
+                timerText.color = Color.yellow;
+            }
+            else
+            {
+                timerText.color = Color.white;
+            }
+        }
+
+        if (isMultiplayer && networkManager != null && networkManager.isHost)
+        {
+            _ = networkManager.SendPreparationTimer(preparationTimeRemaining);
+        }
+
+        if (preparationTimeRemaining <= 0)
+        {
+            OnPreparationTimeOut();
+        }
+    }
+
+    private void OnPreparationTimeOut()
+    {
+        Debug.Log("[GameManager] ⏰ Tiempo de preparación agotado");
+
+        isPreparationActive = false;
+
+        if (isMultiplayer && networkManager != null && networkManager.isHost)
+        {
+            _ = SyncPreparationCompleteToFirebase();
+        }
+
+        EndPreparationPhase();
+    }
+
+    private void CheckIfAllPlayersReady()
+    {
+        Debug.Log("[GameManager] ✅ Todos los jugadores listos");
+
+        if (isMultiplayer && networkManager != null && networkManager.isHost)
+        {
+            _ = SyncPreparationCompleteToFirebase();
+        }
+
+        EndPreparationPhase();
+    }
+
+    private void EndPreparationPhase()
+    {
+        Debug.Log("[GameManager] 🎉 Finalizando fase de preparación");
+
+        isPreparationActive = false;
+        currentPhase = GamePhase.Playing;
+
+        // Ocultar elementos de preparación
+        if (preparationInstructionText)
+        {
+            preparationInstructionText.gameObject.SetActive(false);
+            Debug.Log("[GameManager] ✓ Ocultando instrucciones de preparación");
+        }
+
+        if (scannedCardsCountText)
+        {
+            scannedCardsCountText.gameObject.SetActive(false);
+            Debug.Log("[GameManager] ✓ Ocultando contador de cartas");
+        }
+
+        // Ocultar botón de escaneo
+        if (scanButton)
+        {
+            scanButton.gameObject.SetActive(false);
+            scanButton.interactable = true;
+            scanButton.onClick.RemoveAllListeners();
+            Debug.Log("[GameManager] ✓ Ocultando botón de escaneo");
+        }
+
+        // Resetear color del timer
+        if (timerText)
+        {
+            timerText.color = Color.white;
+        }
+
+        // Validar cartas
+        if (fusionManager != null && fusionManager.GetHandCount() == 0)
+        {
+            ShowWarning("No escaneaste ninguna carta. Se agregarán cartas aleatorias.");
+        }
+
+        PreparationPhaseComplete?.Invoke();
+
+        Debug.Log("[GameManager] 🎮 Transicionando a primera ronda...");
+
         StartNewRound();
     }
 
+    private async Task SyncPreparationPhaseToFirebase()
+    {
+        if (networkManager == null || networkManager.currentRoomRef == null) return;
+
+        try
+        {
+            await networkManager.currentRoomRef.Child("gameState").Child("phase").SetValueAsync("preparation");
+            await networkManager.currentRoomRef.Child("gameState").Child("preparationTimeRemaining")
+                .SetValueAsync(preparationTimeRemaining);
+
+            Debug.Log("[GameManager] ✅ Fase de preparación sincronizada en Firebase");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[GameManager] ❌ Error al sincronizar preparación: {e.Message}");
+        }
+    }
+
+    private async Task SyncPreparationCompleteToFirebase()
+    {
+        if (networkManager == null || networkManager.currentRoomRef == null) return;
+
+        try
+        {
+            await networkManager.currentRoomRef.Child("gameState").Child("phase").SetValueAsync("playing");
+            await networkManager.currentRoomRef.Child("gameState").Child("preparationComplete").SetValueAsync(true);
+
+            Debug.Log("[GameManager] ✅ Fin de preparación sincronizado en Firebase");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[GameManager] ❌ Error al sincronizar fin de preparación: {e.Message}");
+        }
+    }
+
+    private void OnNetworkPreparationStateUpdated(PreparationStateData prepState)
+    {
+        if (!isMultiplayer) return;
+
+        Debug.Log($"[GameManager] 🔄 Estado de preparación actualizado: Fase={prepState.phase}, Listos={prepState.playersReady}/{playerNames.Count}");
+
+        preparationTimeRemaining = prepState.timeRemaining;
+
+        if (prepState.phase == "playing" || prepState.playersReady >= playerNames.Count)
+        {
+            if (isPreparationActive)
+            {
+                EndPreparationPhase();
+            }
+        }
+    }
+
+    // ========== FIN FASE DE PREPARACIÓN ==========
+
     private void StartNewRound()
     {
-        Debug.Log($"[GameManager] Iniciando Ronda {currentRound}");
+        Debug.Log($"[GameManager] 🎮 Iniciando Ronda {currentRound}");
 
-        if (roundText) roundText.text = $"Ronda {currentRound}";
+        if (roundText)
+        {
+            roundText.text = $"Ronda {currentRound}";
+            roundText.gameObject.SetActive(true);
+            Debug.Log($"[GameManager] ✓ Mostrando texto de Ronda {currentRound}");
+        }
 
-        // Si es después de la primera ronda, habilitar botones especiales
         if (currentRound > 1)
         {
             isFirstRoundComplete = true;
         }
 
-        // Reiniciar al primer jugador si es nueva ronda
         if (currentPlayerIndex >= playerNames.Count)
         {
             currentPlayerIndex = 0;
@@ -262,20 +601,17 @@ public class GameManager : MonoBehaviour
 
     private void StartPlayerTurn()
     {
-        Debug.Log($"[GameManager] Turno de {playerNames[currentPlayerIndex]}");
+        Debug.Log($"[GameManager] 🎯 Iniciando turno de {playerNames[currentPlayerIndex]}");
 
-        // Verificar si es mi turno
         if (isMultiplayer && networkManager != null)
         {
             isMyTurn = (currentPlayerIndex == networkManager.playerNumber);
         }
         else
         {
-            // En modo local, siempre es "mi turno"
             isMyTurn = true;
         }
 
-        // Actualizar UI
         if (currentPlayerText)
         {
             string turnText = $"Turno: {playerNames[currentPlayerIndex]}";
@@ -284,70 +620,72 @@ public class GameManager : MonoBehaviour
                 turnText += " (TÚ)";
             }
             currentPlayerText.text = turnText;
+            currentPlayerText.gameObject.SetActive(true);
+            Debug.Log($"[GameManager] ✓ Mostrando texto de jugador: {turnText}");
         }
 
-        // Reiniciar tiempo
         currentTurnTime = turnDuration;
         isTurnActive = true;
         hasScannedThisTurn = false;
 
-        // 🔥 NUEVO: Habilitar/Deshabilitar interacciones en FusionManager
         if (fusionManager != null)
         {
             fusionManager.SetInteractionEnabled(isMyTurn);
         }
 
-        // Configurar botones según la ronda
         ConfigureTurnButtons();
-
-        // Obtener referencia a la mano actual
         UpdateCurrentHand();
 
-        // Notificar cambio de turno
         TurnChanged?.Invoke(currentPlayerIndex);
+
+        Debug.Log($"[GameManager] ✅ Turno iniciado correctamente");
     }
 
     private void ConfigureTurnButtons()
     {
-        // Solo habilitar botones si es mi turno
         bool canInteract = isMyTurn;
 
-        // Habilitar botón de escanear solo después de la primera ronda
+        Debug.Log($"[GameManager] 🔧 Configurando botones de turno (canInteract={canInteract}, firstRound={isFirstRoundComplete})");
+
+        // Botón de escaneo solo después de primera ronda
         if (isFirstRoundComplete && !hasScannedThisTurn && canInteract)
         {
             if (scanButton)
             {
-                scanButton.gameObject.SetActive(true);
                 scanButton.onClick.RemoveAllListeners();
                 scanButton.onClick.AddListener(OnScanClick);
+                scanButton.gameObject.SetActive(true);
+                Debug.Log("[GameManager] ✓ Botón de escaneo activado (ronda 2+)");
             }
         }
         else
         {
-            if (scanButton) scanButton.gameObject.SetActive(false);
+            if (scanButton)
+            {
+                scanButton.gameObject.SetActive(false);
+                Debug.Log("[GameManager] ✓ Botón de escaneo ocultado");
+            }
         }
 
-        // El botón de descartar se activa cuando hay más de 3 cartas
         UpdateDiscardButton();
 
-        // 🔥 CORREGIDO: Botón de finalizar turno SOLO activo si es tu turno
+        // Mostrar botón de finalizar turno
         if (endTurnButton)
         {
+            endTurnButton.gameObject.SetActive(true);
             endTurnButton.interactable = canInteract;
+            Debug.Log($"[GameManager] ✓ Botón finalizar turno (activo={canInteract})");
         }
     }
 
-    // 🔥 NUEVO: Método para sincronizar fin de turno desde Firebase
     private void OnNetworkEndTurnReceived()
     {
         if (!isMultiplayer) return;
 
         Debug.Log("[GameManager] 🔄 Fin de turno recibido desde Firebase");
 
-        // Solo procesar si NO soy yo quien terminó el turno
         if (!isMyTurn)
         {
-            // Pasar al siguiente turno
             EndCurrentTurn();
         }
     }
@@ -363,47 +701,47 @@ public class GameManager : MonoBehaviour
             {
                 discardButton.onClick.RemoveAllListeners();
                 discardButton.onClick.AddListener(OnDiscardClick);
+                Debug.Log($"[GameManager] ✓ Botón descartar activado ({currentHand.Count} cartas)");
             }
         }
     }
 
     private void OnScanClick()
     {
-        Debug.Log("[GameManager] Iniciando escaneo AR...");
+        Debug.Log("[GameManager] 🔍 Iniciando escaneo AR (juego normal)...");
 
-        // Conectar con el sistema AR real
         if (arScanManager != null)
         {
             arScanManager.StartScanning();
         }
         else if (scanPromptPanel)
         {
-            // Fallback si no hay AR configurado
             scanPromptPanel.SetActive(true);
             StartCoroutine(SimulateCardScan());
         }
 
-        // Deshabilitar el botón de escanear después de usarlo
         hasScannedThisTurn = true;
         if (scanButton) scanButton.gameObject.SetActive(false);
     }
 
     public async void OnCardScanned(CardData scannedCard)
     {
+        if (currentPhase == GamePhase.Preparation)
+        {
+            OnPreparationCardScanned(scannedCard);
+            return;
+        }
+
         Debug.Log($"[GameManager] Carta escaneada: {scannedCard.displayName}");
 
-        // Sincronizar con Firebase si es multijugador
         if (isMultiplayer && networkManager != null)
         {
             await networkManager.SendCardScan(scannedCard.id);
         }
 
-        // La carta ya fue agregada por el ARScanManager al FusionManager
-        // Solo actualizamos el estado del juego
         UpdateCurrentHand();
         UpdateDiscardButton();
 
-        // Marcar que ya se escaneó en este turno
         hasScannedThisTurn = true;
         if (scanButton) scanButton.gameObject.SetActive(false);
     }
@@ -414,14 +752,10 @@ public class GameManager : MonoBehaviour
 
         if (scanPromptPanel) scanPromptPanel.SetActive(false);
 
-        // Simulación para testing sin AR
         CardData randomCard = GetRandomCard();
         if (randomCard != null)
         {
-            // Agregar la carta a la mano
             AddCardToHand(randomCard);
-
-            // Llamar a OnCardScanned para mantener consistencia con el flujo AR real
             OnCardScanned(randomCard);
         }
         else
@@ -434,7 +768,6 @@ public class GameManager : MonoBehaviour
     {
         if (fusionManager && cardData != null)
         {
-            // Agregar carta a la mano a través del FusionManager
             fusionManager.AddCardToHand(cardData);
             UpdateCurrentHand();
             UpdateDiscardButton();
@@ -443,8 +776,6 @@ public class GameManager : MonoBehaviour
 
     private CardData GetRandomCard()
     {
-        // Este método debería obtener una carta random de la base de datos
-        // Por ahora retorna null, se debe implementar con tu sistema
         var cardDatabase = Object.FindFirstObjectByType<CardDatabase>();
         if (cardDatabase && cardDatabase.allCards.Count > 0)
         {
@@ -456,19 +787,15 @@ public class GameManager : MonoBehaviour
     private void OnDiscardClick()
     {
         Debug.Log("[GameManager] Modo descarte activado");
-
-        // Habilitar selección para descarte
         EnableDiscardMode();
     }
 
     private void EnableDiscardMode()
     {
-        // Marcar todas las cartas como descartables
         foreach (var card in currentHand)
         {
             if (card != null)
             {
-                // Aquí podrías cambiar el color o agregar un indicador visual
                 card.SetDiscardMode(true);
             }
         }
@@ -484,7 +811,6 @@ public class GameManager : MonoBehaviour
             UpdateCurrentHand();
             UpdateDiscardButton();
 
-            // Desactivar modo descarte si ya tenemos 3 cartas
             if (currentHand.Count <= maxHandSize)
             {
                 DisableDiscardMode();
@@ -505,26 +831,20 @@ public class GameManager : MonoBehaviour
 
     private async void OnEndTurnClick()
     {
-        // Solo permitir si es mi turno
         if (!isMyTurn)
         {
             ShowWarning("No es tu turno.");
             return;
         }
 
-        // 🔥 ACTUALIZAR MANO ANTES DE VALIDAR 🔥
         UpdateCurrentHand();
 
-        // 🔥 VALIDACIÓN MÁS FLEXIBLE: PERMITIR 1-3 CARTAS 🔥
-        // En la primera ronda, todos empiezan con 3 cartas
-        // Después de fusionar, pueden quedar 1 o 2 cartas
         if (currentHand.Count < 1 || currentHand.Count > extendedHandSize)
         {
             ShowWarning($"Debes tener entre 1 y {extendedHandSize} cartas para terminar tu turno. Tienes {currentHand.Count}.");
             return;
         }
 
-        // 🔥 SI TIENE MÁS DE 3, FORZAR DESCARTE 🔥
         if (currentHand.Count > maxHandSize)
         {
             ShowWarning($"Tienes {currentHand.Count} cartas. Debes descartar hasta tener {maxHandSize}.");
@@ -532,13 +852,11 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // Deshabilitar botón para evitar clicks múltiples
         if (endTurnButton != null)
         {
             endTurnButton.interactable = false;
         }
 
-        // Sincronizar fin de turno con Firebase
         if (isMultiplayer && networkManager != null)
         {
             await networkManager.SendEndTurn();
@@ -547,22 +865,18 @@ public class GameManager : MonoBehaviour
         EndCurrentTurn();
     }
 
-    // 🔥 NUEVO MÉTODO PARA RECIBIR TIEMPO SINCRONIZADO 🔥
     private void OnNetworkTurnTimerUpdated(float timeRemaining)
     {
-        if (!isMultiplayer || isMyTurn) return; // Si es mi turno, yo controlo el tiempo
+        if (!isMultiplayer || isMyTurn) return;
 
-        // Actualizar el tiempo local desde Firebase
         currentTurnTime = timeRemaining;
 
-        // Actualizar UI
         if (timerText)
         {
             int minutes = Mathf.FloorToInt(currentTurnTime / 60);
             int seconds = Mathf.FloorToInt(currentTurnTime % 60);
             timerText.text = $"{minutes:00}:{seconds:00}";
 
-            // Cambiar color si queda poco tiempo
             if (currentTurnTime <= 10f)
             {
                 timerText.color = Color.red;
@@ -578,9 +892,8 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 🔥 MODIFICAR UpdateTimer PARA SINCRONIZAR TIEMPO 🔥
     private float lastSyncTime = 0f;
-    private const float SYNC_INTERVAL = 1f; // Sincronizar cada segundo
+    private const float SYNC_INTERVAL = 1f;
 
     private void UpdateTimer()
     {
@@ -592,7 +905,6 @@ public class GameManager : MonoBehaviour
             int seconds = Mathf.FloorToInt(currentTurnTime % 60);
             timerText.text = $"{minutes:00}:{seconds:00}";
 
-            // Cambiar color si queda poco tiempo
             if (currentTurnTime <= 10f)
             {
                 timerText.color = Color.red;
@@ -607,7 +919,6 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // 🔥 SINCRONIZAR TIEMPO CON FIREBASE (SOLO SI ES MI TURNO) 🔥
         if (isMyTurn && isMultiplayer && networkManager != null)
         {
             lastSyncTime += Time.deltaTime;
@@ -618,7 +929,6 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Si se acaba el tiempo
         if (currentTurnTime <= 0)
         {
             OnTimeOut();
@@ -629,21 +939,18 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("[GameManager] ¡Tiempo agotado!");
 
-        // Solo permitir timeout si es mi turno
         if (!isMyTurn && isMultiplayer)
         {
             Debug.LogWarning("[GameManager] Timeout ignorado: no es mi turno");
             return;
         }
 
-        // Si tiene más de 3 cartas, descartar al azar
         while (currentHand.Count > maxHandSize)
         {
             int randomIndex = Random.Range(0, currentHand.Count);
             DiscardCard(currentHand[randomIndex]);
         }
 
-        // 🔥 SINCRONIZAR FIN DE TURNO CON FIREBASE ANTES DE TERMINAR
         if (isMultiplayer && networkManager != null)
         {
             _ = networkManager.SendEndTurn();
@@ -659,23 +966,19 @@ public class GameManager : MonoBehaviour
         isTurnActive = false;
         DisableDiscardMode();
 
-        // 🔥 NUEVO: Deshabilitar interacciones en FusionManager
         if (fusionManager != null)
         {
             fusionManager.SetInteractionEnabled(false);
         }
 
-        // Pasar al siguiente jugador
         currentPlayerIndex++;
 
-        // 🔥 CORREGIDO: Si todos los jugadores jugaron, nueva ronda
         if (currentPlayerIndex >= playerNames.Count)
         {
             currentPlayerIndex = 0;
             currentRound++;
             isFirstRoundComplete = true;
 
-            // 🔥 CORREGIDO: Acceder a isHost desde networkManager
             if (isMultiplayer && networkManager != null && networkManager.isHost)
             {
                 _ = SyncRoundToFirebase();
@@ -684,17 +987,14 @@ public class GameManager : MonoBehaviour
             Debug.Log($"[GameManager] 🎉 Nueva Ronda: {currentRound}");
         }
 
-        // 🔥 CORREGIDO: Acceder a isHost desde networkManager
         if (isMultiplayer && networkManager != null && networkManager.isHost)
         {
             _ = SyncTurnToFirebase();
         }
 
-        // Pequeña pausa antes del siguiente turno
         StartCoroutine(DelayedNextTurn());
     }
 
-    // 🔥 NUEVO: Sincronizar turno con Firebase
     private async Task SyncTurnToFirebase()
     {
         if (networkManager == null || networkManager.currentRoomRef == null) return;
@@ -710,7 +1010,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // 🔥 NUEVO: Sincronizar ronda con Firebase
     private async Task SyncRoundToFirebase()
     {
         if (networkManager == null || networkManager.currentRoomRef == null) return;
@@ -734,7 +1033,6 @@ public class GameManager : MonoBehaviour
 
     private void UpdateCurrentHand()
     {
-        // Obtener las cartas actuales de la mano
         if (fusionManager)
         {
             currentHand = fusionManager.GetCurrentHand();
@@ -744,16 +1042,13 @@ public class GameManager : MonoBehaviour
     private void ShowWarning(string message)
     {
         Debug.LogWarning($"[GameManager] {message}");
-        // Aquí podrías mostrar un panel de UI con el mensaje
     }
 
     public async void OnCardFused()
     {
-        // Llamado por FusionManager cuando se fusionan cartas
         UpdateCurrentHand();
         UpdateDiscardButton();
 
-        // Sincronizar fusión con Firebase si es multijugador
         if (isMultiplayer && networkManager != null && fusionManager != null)
         {
             var selectedCards = fusionManager.GetSelectedData();
@@ -765,7 +1060,6 @@ public class GameManager : MonoBehaviour
                     cardIds[i] = selectedCards[i].id;
                 }
 
-                // Obtener resultado (necesitarás implementar esto en FusionManager)
                 var result = fusionManager.GetLastFusionResult();
                 if (result != null)
                 {
@@ -775,63 +1069,56 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Evento que se llama cuando Firebase actualiza el estado del juego
-    // 🔥 MODIFICADO: Evento que se llama cuando Firebase actualiza el estado del juego
     private void OnNetworkGameStateUpdated(GameStateData gameState)
     {
         if (!isMultiplayer) return;
 
+        // 🔥 CRÍTICO: Ignorar eventos de Firebase durante preparación
+        if (currentPhase == GamePhase.Preparation)
+        {
+            Debug.Log($"[GameManager] ⏸️ Evento de gameState ignorado (estamos en preparación)");
+            return;
+        }
+
         Debug.Log($"[GameManager] Estado de juego actualizado: Turno={gameState.currentTurn}, Ronda={gameState.currentRound}");
 
-        // 🔥 NUEVO: Verificar si el turno cambió
         bool turnChanged = (currentPlayerIndex != gameState.currentTurn);
         bool roundChanged = (currentRound != gameState.currentRound);
 
-        // Actualizar el estado del juego local basado en Firebase
         currentRound = gameState.currentRound;
         currentPlayerIndex = gameState.currentTurn;
 
-        // Actualizar UI
         if (roundText) roundText.text = $"Ronda {currentRound}";
 
-        // 🔥 NUEVO: Marcar si estamos en ronda 2+
         if (currentRound > 1)
         {
             isFirstRoundComplete = true;
         }
 
-        // Verificar si es mi turno
         if (networkManager != null)
         {
             isMyTurn = (currentPlayerIndex == networkManager.playerNumber);
         }
 
-        // 🔥 NUEVO: Si el turno cambió, reiniciar el turno local
         if (turnChanged)
         {
             Debug.Log("[GameManager] 🔄 Cambio de turno detectado desde Firebase");
 
-            // Detener coroutine anterior si existe
             StopAllCoroutines();
 
-            // Iniciar nuevo turno
             StartPlayerTurn();
         }
         else
         {
-            // Solo reconfigurar botones si no hubo cambio de turno
             ConfigureTurnButtons();
         }
     }
 
-    // Eventos adicionales opcionales
     public delegate void OnCardScannedDelegate(CardData card, int playerIndex);
     public static event OnCardScannedDelegate OnCardScannedEvent;
 
     private void LogPlayerAction(string action)
     {
         Debug.Log($"[GameLog] {action}");
-        // Aquí podrías guardar en un historial de acciones para mostrar en UI
-        // o para repetición de partidas
     }
 }

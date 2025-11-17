@@ -396,6 +396,19 @@ public class NetworkManager : MonoBehaviour
         // 🔥 NUEVO: Escuchar eventos de fin de turno
         currentRoomRef.Child("actions").Child("endTurn").ValueChanged += HandleEndTurnChanged;
         roomListeners.Add(currentRoomRef.Child("actions").Child("endTurn"));
+
+        // 🔥 NUEVO: Listener para fase de preparación
+        currentRoomRef.Child("preparation").ValueChanged += HandlePreparationChanged;
+        roomListeners.Add(currentRoomRef.Child("preparation"));
+    }
+
+    private void HandlePreparationChanged(object sender, ValueChangedEventArgs e)
+    {
+        if (e.DatabaseError != null || !e.Snapshot.Exists)
+            return;
+
+        var prepState = PreparationStateData.FromSnapshot(e.Snapshot);
+        OnPreparationStateUpdated?.Invoke(prepState);
     }
 
     // 🔥 NUEVO: Manejar eventos de fin de turno
@@ -566,6 +579,71 @@ public class NetworkManager : MonoBehaviour
 
     // 🔥 EVENTO PARA ACTUALIZAR TIEMPO 🔥
     public event Action<float> OnTurnTimerUpdated;
+
+    // ========== 🔥 NUEVOS MÉTODOS PARA FASE DE PREPARACIÓN ==========
+
+    public event Action<PreparationStateData> OnPreparationStateUpdated;
+
+    public async Task SendPreparationCardScan(string cardId, int scannedCount)
+    {
+        if (currentRoomRef == null) return;
+
+        var scanData = new Dictionary<string, object>
+    {
+        {"playerId", playerId},
+        {"cardId", cardId},
+        {"scannedCount", scannedCount},
+        {"timestamp", ServerValue.Timestamp}
+    };
+
+        await currentRoomRef.Child("preparation").Child("scans").Child(playerId).SetValueAsync(scanData);
+    }
+
+    public async Task SendPlayerPreparationComplete()
+    {
+        if (currentRoomRef == null) return;
+
+        await currentRoomRef.Child("preparation").Child("playersReady").Child(playerId).SetValueAsync(true);
+    }
+
+    public async Task SendPreparationTimer(float timeRemaining)
+    {
+        if (currentRoomRef == null) return;
+
+        await currentRoomRef.Child("preparation").Child("timeRemaining").SetValueAsync(timeRemaining);
+    }
+}
+
+[Serializable]
+public class PreparationStateData
+{
+    public string phase;
+    public float timeRemaining;
+    public int playersReady;
+
+    public static PreparationStateData FromSnapshot(DataSnapshot snapshot)
+    {
+        var prepState = new PreparationStateData
+        {
+            phase = snapshot.Child("phase").Value?.ToString() ?? "preparation",
+            timeRemaining = Convert.ToSingle(snapshot.Child("timeRemaining").Value ?? 60f),
+            playersReady = 0
+        };
+
+        var readySnapshot = snapshot.Child("playersReady");
+        if (readySnapshot.Exists)
+        {
+            foreach (var child in readySnapshot.Children)
+            {
+                if (Convert.ToBoolean(child.Value ?? false))
+                {
+                    prepState.playersReady++;
+                }
+            }
+        }
+
+        return prepState;
+    }
 }
 
 // Clases de datos

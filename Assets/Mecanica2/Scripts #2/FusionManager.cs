@@ -18,8 +18,9 @@ public class FusionManager : MonoBehaviour
     public int maxHandSize = 3;
     public int maxSelectionSize = 2; // Máximo de cartas seleccionables para fusión
 
-    [Header("Mano inicial (3 cartas)")]
-    public List<CardData> startingHand = new List<CardData>();
+    // 🔥 ELIMINADO: startingHand ya no es necesario
+    // La mano se construirá escaneando cartas en la fase de preparación
+
 
     private readonly List<CardView> _handViews = new();
     private readonly List<CardView> _selectionOrder = new();
@@ -37,9 +38,14 @@ public class FusionManager : MonoBehaviour
     void Start()
     {
         gameManager = Object.FindFirstObjectByType<GameManager>();
-        SetupHand();
+
+        // 🔥 ELIMINADO: SetupHand() ya no se llama aquí
+        // La mano se llenará dinámicamente durante la fase de preparación
+
         RefreshFusionButton();
         ClearResultPanel();
+
+        Debug.Log("[FusionManager] ✅ FusionManager iniciado (sin mano inicial)");
     }
 
     // 🔥 NUEVO: Método para habilitar/deshabilitar interacciones
@@ -48,10 +54,8 @@ public class FusionManager : MonoBehaviour
         canInteract = enabled;
         RefreshFusionButton();
 
-        // Deshabilitar selección de cartas si no es el turno
         if (!enabled)
         {
-            // Deseleccionar todas las cartas
             foreach (var card in _selected.ToList())
             {
                 card.SetSelectedFromManager(false);
@@ -59,21 +63,6 @@ public class FusionManager : MonoBehaviour
             _selected.Clear();
             _selectionOrder.Clear();
         }
-    }
-
-    private void SetupHand()
-    {
-        foreach (Transform t in handPanel) Destroy(t.gameObject);
-        _handViews.Clear();
-        _selected.Clear();
-        _selectionOrder.Clear();
-
-        foreach (var c in startingHand.Take(maxHandSize))
-        {
-            CreateCardView(c);
-        }
-
-        UpdateHandLayout();
     }
 
     private CardView CreateCardView(CardData cardData)
@@ -86,9 +75,13 @@ public class FusionManager : MonoBehaviour
 
     public void AddCardToHand(CardData cardData)
     {
-        if (cardData == null) return;
+        if (cardData == null)
+        {
+            Debug.LogWarning("[FusionManager] ⚠️ Intentando agregar carta NULL");
+            return;
+        }
 
-        // Verificar límite de mano extendida (4 cartas después de primera ronda)
+        // 🔥 MODIFICADO: Límite flexible durante preparación
         if (_handViews.Count >= 4)
         {
             Debug.LogWarning("[FusionManager] La mano ya tiene el máximo de cartas permitidas");
@@ -98,7 +91,7 @@ public class FusionManager : MonoBehaviour
         var newCard = CreateCardView(cardData);
         UpdateHandLayout();
 
-        Debug.Log($"[FusionManager] Carta agregada: {cardData.displayName}. Total en mano: {_handViews.Count}");
+        Debug.Log($"[FusionManager] ✅ Carta agregada: {cardData.displayName}. Total en mano: {_handViews.Count}");
     }
 
     public void RemoveCardFromHand(CardView card)
@@ -107,7 +100,6 @@ public class FusionManager : MonoBehaviour
         {
             _handViews.Remove(card);
 
-            // Si estaba seleccionada, remover de la selección
             if (_selected.Contains(card))
             {
                 _selected.Remove(card);
@@ -134,26 +126,23 @@ public class FusionManager : MonoBehaviour
 
     public void NotifySelectionChanged(CardView view, bool selected)
     {
-        // 🔥 NUEVO: No permitir selección si no es el turno del jugador
         if (!canInteract)
         {
             Debug.LogWarning("[FusionManager] No puedes seleccionar cartas cuando no es tu turno");
-            view.SetSelectedFromManager(false); // Forzar deselección
+            view.SetSelectedFromManager(false);
             return;
         }
 
-        // Si estamos en modo descarte, manejar diferente
         if (isDiscardMode)
         {
             if (selected && gameManager != null)
             {
                 gameManager.DiscardCard(view);
-                isDiscardMode = false; // Salir del modo descarte después de descartar
+                isDiscardMode = false;
             }
             return;
         }
 
-        // Lógica normal de selección para fusión
         if (selected)
         {
             if (!_selected.Contains(view))
@@ -161,7 +150,6 @@ public class FusionManager : MonoBehaviour
                 _selected.Add(view);
                 _selectionOrder.Add(view);
 
-                // Límite de selección para fusión
                 if (_selected.Count > maxSelectionSize)
                 {
                     var oldest = _selectionOrder[0];
@@ -190,7 +178,6 @@ public class FusionManager : MonoBehaviour
     {
         isDiscardMode = enabled;
 
-        // Deseleccionar todas las cartas cuando entramos en modo descarte
         if (enabled)
         {
             foreach (var card in _selected.ToList())
@@ -205,10 +192,6 @@ public class FusionManager : MonoBehaviour
 
     private void RefreshFusionButton()
     {
-        // 🔥 MODIFICADO: Botón activo solo si:
-        // 1. Es el turno del jugador (canInteract)
-        // 2. Hay exactamente 2 cartas seleccionadas
-        // 3. La combinación existe en la base de datos
         if (canInteract && _selected.Count == 2 && fusionDatabase != null)
         {
             var duo = GetSelectedData();
@@ -228,7 +211,6 @@ public class FusionManager : MonoBehaviour
 
     public void OnClickFusionar()
     {
-        // 🔥 NUEVO: Verificar que sea el turno del jugador
         if (!canInteract)
         {
             Debug.LogWarning("[FusionManager] No puedes fusionar cuando no es tu turno");
@@ -246,28 +228,23 @@ public class FusionManager : MonoBehaviour
             return;
         }
 
-        // Guardar el último resultado de fusión para multijugador
         lastFusionResult = result;
 
-        // Remover las cartas fusionadas
         var cardsToRemove = _selected.ToList();
         foreach (var card in cardsToRemove)
         {
             RemoveCardFromHand(card);
         }
 
-        // Agregar la carta resultante a la mano
         AddCardToHand(result);
 
         ShowResult(result, "¡Fusión exitosa!");
 
-        // Limpiar selección
         _selected.Clear();
         _selectionOrder.Clear();
 
         RefreshFusionButton();
 
-        // Notificar al GameManager
         if (gameManager != null)
         {
             gameManager.OnCardFused();
@@ -282,7 +259,6 @@ public class FusionManager : MonoBehaviour
             var v = Instantiate(cardViewPrefab, resultPanel);
             v.Setup(data, this);
 
-            // Animación de aparición
             var anim = v.gameObject.GetComponent<ResultAppear>() ?? v.gameObject.AddComponent<ResultAppear>();
             anim.Play();
         }
