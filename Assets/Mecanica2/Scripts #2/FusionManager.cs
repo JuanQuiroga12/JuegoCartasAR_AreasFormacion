@@ -14,13 +14,12 @@ public class FusionManager : MonoBehaviour
     public Transform resultPanel;
     public Button fusionButton;
 
+    [Header("🔥 Selector de Resultados")]
+    public FusionResultSelector resultSelector; // ⬅️ DEBE estar asignado desde el Inspector
+
     [Header("Configuración")]
     public int maxHandSize = 3;
-    public int maxSelectionSize = 2; // Máximo de cartas seleccionables para fusión
-
-    // 🔥 ELIMINADO: startingHand ya no es necesario
-    // La mano se construirá escaneando cartas en la fase de preparación
-
+    public int maxSelectionSize = 2;
 
     private readonly List<CardView> _handViews = new();
     private readonly List<CardView> _selectionOrder = new();
@@ -28,27 +27,46 @@ public class FusionManager : MonoBehaviour
 
     private GameManager gameManager;
     private bool isDiscardMode = false;
-
-    // Variable para almacenar el último resultado de fusión (para multijugador)
     private CardData lastFusionResult = null;
-
-    // 🔥 NUEVO: Variable para controlar si el jugador puede interactuar
     private bool canInteract = true;
+
+    // 🔥 NUEVO: Flag para evitar múltiples fusiones simultáneas
+    private bool isFusing = false;
 
     void Start()
     {
         gameManager = Object.FindFirstObjectByType<GameManager>();
 
-        // 🔥 ELIMINADO: SetupHand() ya no se llama aquí
-        // La mano se llenará dinámicamente durante la fase de preparación
+        // 🔥 CRÍTICO: Validar que resultSelector esté asignado MANUALMENTE en el Inspector
+        if (resultSelector == null)
+        {
+            Debug.LogError("[FusionManager] ❌❌❌ FusionResultSelector NO ESTÁ ASIGNADO EN EL INSPECTOR!");
+            Debug.LogError("[FusionManager] Por favor, arrastra el FusionResultSelectorPanel al campo 'Result Selector' en el Inspector");
+
+            // 🔥 INTENTO DE BÚSQUEDA FORZADA (incluyendo objetos inactivos)
+            resultSelector = Object.FindFirstObjectByType<FusionResultSelector>(FindObjectsInactive.Include);
+
+            if (resultSelector != null)
+            {
+                Debug.LogWarning($"[FusionManager] ⚠️ Encontrado mediante búsqueda forzada: {resultSelector.gameObject.name}");
+                Debug.LogWarning("[FusionManager] ⚠️ IMPORTANTE: Asigna esto manualmente en el Inspector para evitar este warning");
+            }
+            else
+            {
+                Debug.LogError("[FusionManager] ❌ NO SE ENCONTRÓ FusionResultSelector ni siquiera en objetos inactivos!");
+            }
+        }
+        else
+        {
+            Debug.Log($"[FusionManager] ✅ FusionResultSelector asignado correctamente: {resultSelector.gameObject.name}");
+        }
 
         RefreshFusionButton();
         ClearResultPanel();
 
-        Debug.Log("[FusionManager] ✅ FusionManager iniciado (sin mano inicial)");
+        Debug.Log("[FusionManager] ✅ FusionManager iniciado");
     }
 
-    // 🔥 NUEVO: Método para habilitar/deshabilitar interacciones
     public void SetInteractionEnabled(bool enabled)
     {
         canInteract = enabled;
@@ -81,7 +99,6 @@ public class FusionManager : MonoBehaviour
             return;
         }
 
-        // 🔥 MODIFICADO: Límite flexible durante preparación
         if (_handViews.Count >= 4)
         {
             Debug.LogWarning("[FusionManager] La mano ya tiene el máximo de cartas permitidas");
@@ -192,11 +209,11 @@ public class FusionManager : MonoBehaviour
 
     private void RefreshFusionButton()
     {
-        if (canInteract && _selected.Count == 2 && fusionDatabase != null)
+        if (canInteract && _selected.Count == 2 && fusionDatabase != null && !isFusing)
         {
             var duo = GetSelectedData();
-            var canFuse = fusionDatabase.TryFuse(duo) != null;
-            fusionButton.interactable = canFuse;
+            var results = fusionDatabase.TryFuseMultiple(duo);
+            fusionButton.interactable = (results != null && results.Count > 0);
         }
         else
         {
@@ -209,24 +226,120 @@ public class FusionManager : MonoBehaviour
         return _selected.Select(v => v.data).ToList();
     }
 
+    // 🔥 MODIFICADO: Método principal de fusión con soporte para múltiples resultados
     public void OnClickFusionar()
     {
+        Debug.Log("[FusionManager] ========================================");
+        Debug.Log("[FusionManager] 🎯 OnClickFusionar() INICIADO");
+        Debug.Log("[FusionManager] ========================================");
+
         if (!canInteract)
         {
             Debug.LogWarning("[FusionManager] No puedes fusionar cuando no es tu turno");
             return;
         }
 
-        if (_selected.Count != 2 || fusionDatabase == null) return;
-
-        var duo = GetSelectedData();
-        var result = fusionDatabase.TryFuse(duo);
-
-        if (result == null)
+        if (isFusing)
         {
-            Debug.Log("Combinación no válida (sin receta).");
+            Debug.LogWarning("[FusionManager] Ya hay una fusión en progreso");
             return;
         }
+
+        if (_selected.Count != 2)
+        {
+            Debug.LogWarning($"[FusionManager] Se necesitan 2 cartas seleccionadas. Actualmente: {_selected.Count}");
+            return;
+        }
+
+        if (fusionDatabase == null)
+        {
+            Debug.LogError("[FusionManager] ❌ fusionDatabase es NULL!");
+            return;
+        }
+
+        var duo = GetSelectedData();
+        Debug.Log($"[FusionManager] 🃏 Cartas seleccionadas: {duo[0].displayName} + {duo[1].displayName}");
+
+        var results = fusionDatabase.TryFuseMultiple(duo);
+
+        if (results == null)
+        {
+            Debug.LogWarning("[FusionManager] TryFuseMultiple retornó NULL");
+            return;
+        }
+
+        Debug.Log($"[FusionManager] 📊 Resultados encontrados: {results.Count}");
+
+        if (results.Count == 0)
+        {
+            Debug.Log("[FusionManager] Combinación no válida (sin receta).");
+            return;
+        }
+
+        // 🔥 NUEVO: Si hay múltiples resultados, mostrar selector
+        if (results.Count > 1)
+        {
+            Debug.Log($"[FusionManager] 🎯 Múltiples resultados encontrados ({results.Count}), mostrando selector");
+            Debug.Log($"[FusionManager]   Resultados: {string.Join(", ", results.Select(r => r.displayName))}");
+
+            // 🔥 VALIDACIÓN CRÍTICA
+            if (resultSelector == null)
+            {
+                Debug.LogError("[FusionManager] ❌❌❌ CRÍTICO: resultSelector es NULL!");
+                Debug.LogError("[FusionManager] ❌ No se puede mostrar el selector de opciones");
+                Debug.LogError("[FusionManager] ❌ Usando primer resultado como fallback");
+                OnFusionResultSelected(results[0]);
+                return;
+            }
+
+            Debug.Log($"[FusionManager] ✅ resultSelector válido: {resultSelector.gameObject.name}");
+            Debug.Log($"[FusionManager] 📍 Panel activo en jerarquía: {resultSelector.gameObject.activeInHierarchy}");
+
+            isFusing = true;
+            fusionButton.interactable = false;
+
+            Debug.Log("[FusionManager] 📤 Llamando a resultSelector.ShowOptions()...");
+
+            resultSelector.ShowOptions(results, OnFusionResultSelected);
+
+            Debug.Log("[FusionManager] ✅ ShowOptions() llamado exitosamente");
+        }
+        else
+        {
+            // 🔥 Solo un resultado, fusión directa
+            Debug.Log($"[FusionManager] ✅ Un solo resultado, fusión directa: {results[0].displayName}");
+            CompleteFusion(results[0]);
+        }
+
+        Debug.Log("[FusionManager] ========================================");
+        Debug.Log("[FusionManager] 🏁 OnClickFusionar() FINALIZADO");
+        Debug.Log("[FusionManager] ========================================");
+    }
+
+    // 🔥 NUEVO: Callback cuando el usuario selecciona un resultado
+    private void OnFusionResultSelected(CardData selectedResult)
+    {
+        Debug.Log("[FusionManager] ========================================");
+        Debug.Log("[FusionManager] 🎯 OnFusionResultSelected() LLAMADO");
+        Debug.Log("[FusionManager] ========================================");
+
+        isFusing = false;
+
+        if (selectedResult == null)
+        {
+            Debug.Log("[FusionManager] Fusión cancelada por el usuario");
+            RefreshFusionButton();
+            return;
+        }
+
+        Debug.Log($"[FusionManager] Usuario seleccionó: {selectedResult.displayName}");
+        CompleteFusion(selectedResult);
+    }
+
+    // 🔥 NUEVO: Método que completa la fusión con el resultado elegido
+    private void CompleteFusion(CardData result)
+    {
+        Debug.Log($"[FusionManager] 🎉 CompleteFusion() - Resultado: {result.displayName}");
 
         lastFusionResult = result;
 
@@ -272,7 +385,6 @@ public class FusionManager : MonoBehaviour
 
     private void UpdateHandLayout()
     {
-        // Si tienes FanHandLayout, actualizar el layout
         var fanLayout = handPanel.GetComponent<FanHandLayout>();
         if (fanLayout != null)
         {
@@ -280,22 +392,11 @@ public class FusionManager : MonoBehaviour
         }
     }
 
-    // ========== MÉTODOS PARA MULTIJUGADOR ==========
-
-    /// <summary>
-    /// Obtiene el último resultado de fusión realizado.
-    /// Se usa para sincronizar la fusión con Firebase en modo multijugador.
-    /// </summary>
-    /// <returns>La CardData del último resultado de fusión, o null si no hay ninguno</returns>
     public CardData GetLastFusionResult()
     {
         return lastFusionResult;
     }
 
-    /// <summary>
-    /// Limpia el último resultado de fusión almacenado.
-    /// Útil para resetear el estado después de sincronizar.
-    /// </summary>
     public void ClearLastFusionResult()
     {
         lastFusionResult = null;
