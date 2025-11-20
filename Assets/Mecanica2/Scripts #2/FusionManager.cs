@@ -209,17 +209,34 @@ public class FusionManager : MonoBehaviour
 
     private void RefreshFusionButton()
     {
+        // Estado anterior del botón (por si está desasignado evitamos null)
+        bool wasInteractable = fusionButton != null && fusionButton.interactable;
+
         if (canInteract && _selected.Count == 2 && fusionDatabase != null && !isFusing)
         {
             var duo = GetSelectedData();
             var results = fusionDatabase.TryFuseMultiple(duo);
-            fusionButton.interactable = (results != null && results.Count > 0);
+
+            // Misma condición que tenías antes
+            bool canFuseNow = (results != null && results.Count > 0);
+
+            if (fusionButton != null)
+                fusionButton.interactable = canFuseNow;
+
+            // Si ANTES estaba desactivado y AHORA se activa → reproducir sonido
+            if (!wasInteractable && canFuseNow)
+            {
+                if (SFXManager.Instance != null)
+                    SFXManager.Instance.PlayFusionButtonEnabled();
+            }
         }
         else
         {
-            fusionButton.interactable = false;
+            if (fusionButton != null)
+                fusionButton.interactable = false;
         }
     }
+
 
     public List<CardData> GetSelectedData()
     {

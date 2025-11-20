@@ -323,6 +323,9 @@ public class GameManager : MonoBehaviour
         }
 
         Debug.Log("[GameManager] ✅ Fase de preparación iniciada completamente");
+        // 🔊 Iniciar loop de timer para fase de preparación
+        if (SFXManager.Instance != null)
+            SFXManager.Instance.StartTimerLoop();
     }
 
     private void OnPreparationScanClick()
@@ -447,6 +450,9 @@ public class GameManager : MonoBehaviour
 
     private void OnPreparationTimeOut()
     {
+        // 🔊 Detener loop de timer
+        if (SFXManager.Instance != null)
+            SFXManager.Instance.StopTimerLoop();
         Debug.Log("[GameManager] ⏰ Tiempo de preparación agotado");
 
         isPreparationActive = false;
@@ -627,6 +633,9 @@ public class GameManager : MonoBehaviour
         currentTurnTime = turnDuration;
         isTurnActive = true;
         hasScannedThisTurn = false;
+        // 🔊 Iniciar loop de timer para turno
+        if (SFXManager.Instance != null)
+            SFXManager.Instance.StartTimerLoop();
 
         if (fusionManager != null)
         {
@@ -938,6 +947,9 @@ public class GameManager : MonoBehaviour
     private void OnTimeOut()
     {
         Debug.Log("[GameManager] ¡Tiempo agotado!");
+        // 🔊 Detener loop de timer
+        if (SFXManager.Instance != null)
+            SFXManager.Instance.StopTimerLoop();
 
         if (!isMyTurn && isMultiplayer)
         {
