@@ -31,13 +31,13 @@ public class IntroVideoController : MonoBehaviour
 
     void OnVideoFinished(VideoPlayer vp)
     {
-        EndVideo();
+        SkipVideo();   // Reutiliza la lógica del botón
     }
 
+    // Si quieres, puedes borrar EndVideo o dejarlo sin usar.
     void EndVideo()
     {
-        videoImage.gameObject.SetActive(false);
-        skipButton.gameObject.SetActive(false);
-        sceneContent.SetActive(true);
+        SkipVideo();
     }
+
 }
