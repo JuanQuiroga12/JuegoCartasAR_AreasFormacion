@@ -3,7 +3,62 @@ guid: ff7d06fcef4f61548a63959dcbf12bd7
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Black_plastic
+    second: {fileID: -1580535799172915004, guid: 1766fc7076a24e34ab830332fd840394, type: 3}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cheap Toy Plastic
+    second: {fileID: -1580535799172915004, guid: 1766fc7076a24e34ab830332fd840394, type: 3}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cheap Toy Plastic.001
+    second: {fileID: 2100000, guid: ae830609f8b6ac94fa82c922b42b8ce5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cheap Toy Plastic.003
+    second: {fileID: 2100000, guid: 796b8628e9f318b45904f651678edbb9, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cheap Toy Plastic.004
+    second: {fileID: 2100000, guid: fd009fbb8d7945b49b272c58667c936e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Cheap Toy Plastic.005
+    second: {fileID: 2100000, guid: fd009fbb8d7945b49b272c58667c936e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material.001
+    second: {fileID: 2100000, guid: fd009fbb8d7945b49b272c58667c936e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material.002
+    second: {fileID: 2100000, guid: fd009fbb8d7945b49b272c58667c936e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material.004
+    second: {fileID: 2100000, guid: fd009fbb8d7945b49b272c58667c936e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material.005
+    second: {fileID: 2100000, guid: fd009fbb8d7945b49b272c58667c936e, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: default.001
+    second: {fileID: 2100000, guid: fd009fbb8d7945b49b272c58667c936e, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

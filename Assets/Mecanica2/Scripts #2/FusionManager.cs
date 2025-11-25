@@ -33,6 +33,10 @@ public class FusionManager : MonoBehaviour
     // 🔥 NUEVO: Flag para evitar múltiples fusiones simultáneas
     private bool isFusing = false;
 
+    // 🔥 AGREGAR AL INICIO DE LA CLASE (después de las variables privadas)
+    private int fusionsUsedThisTurn = 0;
+    private int maxFusionsPerTurn = 1; // Se puede configurar desde GameManager
+
     void Start()
     {
         gameManager = Object.FindFirstObjectByType<GameManager>();
@@ -227,23 +231,29 @@ public class FusionManager : MonoBehaviour
         }
     }
 
+    // 🔥 NUEVO MÉTODO: Resetear contador al inicio del turno
+    public void ResetFusionCounter()
+    {
+        fusionsUsedThisTurn = 0;
+        Debug.Log("[FusionManager] 🔄 Contador de fusiones reseteado");
+    }
+
+    // 🔥 MODIFICAR RefreshFusionButton() para verificar límite de fusiones
     private void RefreshFusionButton()
     {
-        // Estado anterior del botón (por si está desasignado evitamos null)
         bool wasInteractable = fusionButton != null && fusionButton.interactable;
 
-        if (canInteract && _selected.Count == 2 && fusionDatabase != null && !isFusing)
+        // 🔥 NUEVA CONDICIÓN: Verificar que no se haya excedido el límite de fusiones
+        if (canInteract && _selected.Count == 2 && fusionDatabase != null && !isFusing && fusionsUsedThisTurn < maxFusionsPerTurn)
         {
             var duo = GetSelectedData();
             var results = fusionDatabase.TryFuseMultiple(duo);
 
-            // Misma condición que tenías antes
             bool canFuseNow = (results != null && results.Count > 0);
 
             if (fusionButton != null)
                 fusionButton.interactable = canFuseNow;
 
-            // Si ANTES estaba desactivado y AHORA se activa → reproducir sonido
             if (!wasInteractable && canFuseNow)
             {
                 if (SFXManager.Instance != null)
@@ -254,6 +264,12 @@ public class FusionManager : MonoBehaviour
         {
             if (fusionButton != null)
                 fusionButton.interactable = false;
+
+            // 🔥 NUEVO: Log si se alcanzó límite de fusiones
+            if (fusionsUsedThisTurn >= maxFusionsPerTurn)
+            {
+                Debug.Log($"[FusionManager] ⚠️ Límite de fusiones alcanzado ({fusionsUsedThisTurn}/{maxFusionsPerTurn})");
+            }
         }
     }
 
@@ -373,7 +389,7 @@ public class FusionManager : MonoBehaviour
         CompleteFusion(selectedResult);
     }
 
-    // 🔥 NUEVO: Método que completa la fusión con el resultado elegido
+    // 🔥 MODIFICAR CompleteFusion() para incrementar contador
     private void CompleteFusion(CardData result)
     {
         Debug.Log($"[FusionManager] 🎉 CompleteFusion() - Resultado: {result.displayName}");
@@ -392,6 +408,10 @@ public class FusionManager : MonoBehaviour
 
         _selected.Clear();
         _selectionOrder.Clear();
+
+        // 🔥 NUEVO: Incrementar contador de fusiones
+        fusionsUsedThisTurn++;
+        Debug.Log($"[FusionManager] 📊 Fusiones usadas este turno: {fusionsUsedThisTurn}/{maxFusionsPerTurn}");
 
         RefreshFusionButton();
 

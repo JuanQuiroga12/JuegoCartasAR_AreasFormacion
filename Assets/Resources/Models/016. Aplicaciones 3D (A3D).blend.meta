@@ -3,7 +3,12 @@ guid: 70686c55fee72d342bf78f5126123540
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PixelArt_Simple
+    second: {fileID: 2100000, guid: a84970925e3b5d54dbfd56fbdf608064, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

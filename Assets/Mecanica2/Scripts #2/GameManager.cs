@@ -12,9 +12,11 @@ public class GameManager : MonoBehaviour
     [Header("Configuración del Juego")]
     [SerializeField] private float turnDuration = 60f;
     [SerializeField] private float preparationDuration = 60f;
-    [SerializeField] private int maxHandSize = 3;
-    [SerializeField] private int extendedHandSize = 4;
+    [SerializeField] private int maxHandSize = 3; // ⬅️ Debe terminar con 3
+    [SerializeField] private int absoluteMaxHandSize = 4; // 🔥 NUEVO: Máximo absoluto
     [SerializeField] private int initialCardsToScan = 3;
+    [SerializeField] private int maxScansPerTurn = 2; // 🔥 NUEVO: Máximo escaneos por turno
+    [SerializeField] private int maxFusionsPerTurn = 1; // 🔥 NUEVO: Máximo fusiones por turno
 
     [Header("Referencias")]
     [SerializeField] private FusionManager fusionManager;
@@ -25,6 +27,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI roundText;
     [SerializeField] private TextMeshProUGUI currentPlayerText;
     [SerializeField] private GameObject scanPromptPanel;
+
+    [Header("🔥 UI Contadores de Turno")]
+    [SerializeField] private TextMeshProUGUI scansCountText; // 🔥 NUEVO
+    [SerializeField] private TextMeshProUGUI fusionsCountText; // 🔥 NUEVO
 
     [Header("🔥 UI Fase de Preparación - Solo Textos")]
     [SerializeField] private TextMeshProUGUI preparationInstructionText;
@@ -57,11 +63,13 @@ public class GameManager : MonoBehaviour
     // Estado del juego
     private int currentPlayerIndex = 0;
     private int currentRound = 1;
-    private bool isFirstRoundComplete = false;
     private float currentTurnTime;
     private bool isTurnActive = false;
     private List<CardView> currentHand = new List<CardView>();
-    private bool hasScannedThisTurn = false;
+
+    // 🔥 NUEVO: Contadores de turno
+    private int scansUsedThisTurn = 0;
+    private int fusionsUsedThisTurn = 0;
 
     // Multijugador
     private bool isMyTurn = false;
@@ -177,6 +185,8 @@ public class GameManager : MonoBehaviour
         if (currentPlayerText) currentPlayerText.gameObject.SetActive(false);
         if (preparationInstructionText) preparationInstructionText.gameObject.SetActive(false);
         if (scannedCardsCountText) scannedCardsCountText.gameObject.SetActive(false);
+        if (scansCountText) scansCountText.gameObject.SetActive(false); // 🔥 NUEVO
+        if (fusionsCountText) fusionsCountText.gameObject.SetActive(false); // 🔥 NUEVO
 
         // Configurar listeners de botones
         if (endTurnButton) endTurnButton.onClick.AddListener(OnEndTurnClick);
@@ -315,6 +325,8 @@ public class GameManager : MonoBehaviour
         // 🔥 CRÍTICO: Asegurar que botones de juego estén ocultos
         if (discardButton) discardButton.gameObject.SetActive(false);
         if (endTurnButton) endTurnButton.gameObject.SetActive(false);
+        if (scansCountText) scansCountText.gameObject.SetActive(false); // 🔥 NUEVO
+        if (fusionsCountText) fusionsCountText.gameObject.SetActive(false); // 🔥 NUEVO
 
         // Sincronizar con Firebase
         if (isMultiplayer && networkManager != null && networkManager.isHost)
@@ -323,7 +335,7 @@ public class GameManager : MonoBehaviour
         }
 
         Debug.Log("[GameManager] ✅ Fase de preparación iniciada completamente");
-        // 🔊 Iniciar loop de timer para fase de preparación
+
         if (SFXManager.Instance != null)
             SFXManager.Instance.StartTimerLoop();
     }
@@ -450,9 +462,9 @@ public class GameManager : MonoBehaviour
 
     private void OnPreparationTimeOut()
     {
-        // 🔊 Detener loop de timer
         if (SFXManager.Instance != null)
             SFXManager.Instance.StopTimerLoop();
+
         Debug.Log("[GameManager] ⏰ Tiempo de preparación agotado");
 
         isPreparationActive = false;
@@ -590,11 +602,6 @@ public class GameManager : MonoBehaviour
             Debug.Log($"[GameManager] ✓ Mostrando texto de Ronda {currentRound}");
         }
 
-        if (currentRound > 1)
-        {
-            isFirstRoundComplete = true;
-        }
-
         if (currentPlayerIndex >= playerNames.Count)
         {
             currentPlayerIndex = 0;
@@ -632,14 +639,19 @@ public class GameManager : MonoBehaviour
 
         currentTurnTime = turnDuration;
         isTurnActive = true;
-        hasScannedThisTurn = false;
-        // 🔊 Iniciar loop de timer para turno
+
+        // 🔥 NUEVO: Resetear contadores de turno
+        scansUsedThisTurn = 0;
+        fusionsUsedThisTurn = 0;
+        UpdateTurnCounters();
+
         if (SFXManager.Instance != null)
             SFXManager.Instance.StartTimerLoop();
 
         if (fusionManager != null)
         {
             fusionManager.SetInteractionEnabled(isMyTurn);
+            fusionManager.ResetFusionCounter(); // 🔥 NUEVO
         }
 
         ConfigureTurnButtons();
@@ -650,29 +662,58 @@ public class GameManager : MonoBehaviour
         Debug.Log($"[GameManager] ✅ Turno iniciado correctamente");
     }
 
+    // 🔥 NUEVO: Actualizar textos de contadores
+    private void UpdateTurnCounters()
+    {
+        if (scansCountText != null)
+        {
+            scansCountText.text = $"Escaneos: {scansUsedThisTurn}/{maxScansPerTurn}";
+            scansCountText.gameObject.SetActive(isMyTurn);
+        }
+
+        if (fusionsCountText != null)
+        {
+            fusionsCountText.text = $"Fusiones: {fusionsUsedThisTurn}/{maxFusionsPerTurn}";
+            fusionsCountText.gameObject.SetActive(isMyTurn);
+        }
+    }
+
     private void ConfigureTurnButtons()
     {
         bool canInteract = isMyTurn;
 
-        Debug.Log($"[GameManager] 🔧 Configurando botones de turno (canInteract={canInteract}, firstRound={isFirstRoundComplete})");
+        Debug.Log($"[GameManager] 🔧 Configurando botones de turno (canInteract={canInteract})");
 
-        // Botón de escaneo solo después de primera ronda
-        if (isFirstRoundComplete && !hasScannedThisTurn && canInteract)
+        // 🔥 MODIFICADO: Botón de escaneo disponible SIEMPRE (desde ronda 1)
+        // Pero solo si:
+        // 1. No se han usado todos los escaneos
+        // 2. La mano no está llena (< 4 cartas)
+        bool canScan = canInteract &&
+                       scansUsedThisTurn < maxScansPerTurn &&
+                       currentHand.Count < absoluteMaxHandSize;
+
+        if (scanButton)
         {
-            if (scanButton)
+            if (canScan)
             {
                 scanButton.onClick.RemoveAllListeners();
                 scanButton.onClick.AddListener(OnScanClick);
                 scanButton.gameObject.SetActive(true);
-                Debug.Log("[GameManager] ✓ Botón de escaneo activado (ronda 2+)");
+                scanButton.interactable = true;
+                Debug.Log($"[GameManager] ✓ Botón de escaneo activado ({scansUsedThisTurn}/{maxScansPerTurn} usados, {currentHand.Count}/{absoluteMaxHandSize} cartas)");
             }
-        }
-        else
-        {
-            if (scanButton)
+            else
             {
                 scanButton.gameObject.SetActive(false);
-                Debug.Log("[GameManager] ✓ Botón de escaneo ocultado");
+
+                if (scansUsedThisTurn >= maxScansPerTurn)
+                {
+                    Debug.Log($"[GameManager] ✓ Botón de escaneo ocultado (límite alcanzado: {scansUsedThisTurn}/{maxScansPerTurn})");
+                }
+                else if (currentHand.Count >= absoluteMaxHandSize)
+                {
+                    Debug.Log($"[GameManager] ✓ Botón de escaneo ocultado (mano llena: {currentHand.Count}/{absoluteMaxHandSize})");
+                }
             }
         }
 
@@ -717,7 +758,21 @@ public class GameManager : MonoBehaviour
 
     private void OnScanClick()
     {
-        Debug.Log("[GameManager] 🔍 Iniciando escaneo AR (juego normal)...");
+        // 🔥 NUEVA VALIDACIÓN: Verificar límite de escaneos
+        if (scansUsedThisTurn >= maxScansPerTurn)
+        {
+            ShowWarning($"Ya usaste todos tus escaneos este turno ({maxScansPerTurn} máximo)");
+            return;
+        }
+
+        // 🔥 NUEVA VALIDACIÓN: Verificar que no tenga 4 cartas
+        if (currentHand.Count >= absoluteMaxHandSize)
+        {
+            ShowWarning($"No puedes escanear con {absoluteMaxHandSize} cartas. Fusiona o descarta primero.");
+            return;
+        }
+
+        Debug.Log($"[GameManager] 🔍 Iniciando escaneo AR ({scansUsedThisTurn + 1}/{maxScansPerTurn})...");
 
         if (arScanManager != null)
         {
@@ -728,14 +783,10 @@ public class GameManager : MonoBehaviour
             scanPromptPanel.SetActive(true);
             StartCoroutine(SimulateCardScan());
         }
-
-        hasScannedThisTurn = true;
-        if (scanButton) scanButton.gameObject.SetActive(false);
     }
 
     public async void OnCardScanned(CardData scannedCard)
     {
-        // 🔥 VALIDACIÓN: Carta no puede ser null
         if (scannedCard == null)
         {
             Debug.LogError("[GameManager] ❌ Carta escaneada es NULL");
@@ -754,8 +805,21 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        // 🔥 CRÍTICO: Agregar carta al FusionManager en juego normal (ronda 2+)
-        Debug.Log("[GameManager] 🔧 Procesando escaneo en JUEGO NORMAL (ronda 2+)");
+        // 🔥 VALIDACIÓN: No exceder límite de escaneos
+        if (scansUsedThisTurn >= maxScansPerTurn)
+        {
+            ShowWarning($"Ya usaste todos tus escaneos este turno ({maxScansPerTurn} máximo)");
+            return;
+        }
+
+        // 🔥 VALIDACIÓN: No exceder límite de cartas
+        if (currentHand.Count >= absoluteMaxHandSize)
+        {
+            ShowWarning($"No puedes tener más de {absoluteMaxHandSize} cartas");
+            return;
+        }
+
+        Debug.Log("[GameManager] 🔧 Procesando escaneo en JUEGO NORMAL");
 
         // 1. Agregar carta a la mano visualmente
         if (fusionManager != null)
@@ -768,19 +832,17 @@ public class GameManager : MonoBehaviour
             Debug.LogError("[GameManager] ❌ FusionManager es NULL! No se puede agregar la carta");
         }
 
-        // 2. Actualizar estado local
+        // 2. Incrementar contador de escaneos
+        scansUsedThisTurn++;
+        UpdateTurnCounters();
+        Debug.Log($"[GameManager] 📊 Escaneos usados este turno: {scansUsedThisTurn}/{maxScansPerTurn}");
+
+        // 3. Actualizar estado local
         UpdateCurrentHand();
         UpdateDiscardButton();
 
-        // 3. Marcar que ya se escaneó en este turno
-        hasScannedThisTurn = true;
-
-        // 4. Ocultar botón de escaneo
-        if (scanButton)
-        {
-            scanButton.gameObject.SetActive(false);
-            Debug.Log("[GameManager] ✓ Botón de escaneo ocultado");
-        }
+        // 4. Reconfigurar botones (ocultar escaneo si llegó al límite o si tiene 4 cartas)
+        ConfigureTurnButtons();
 
         // 5. Sincronizar con Firebase si es multijugador
         if (isMultiplayer && networkManager != null)
@@ -862,6 +924,9 @@ public class GameManager : MonoBehaviour
             {
                 DisableDiscardMode();
             }
+
+            // 🔥 NUEVO: Reconfigurar botones después de descartar
+            ConfigureTurnButtons();
         }
     }
 
@@ -886,16 +951,10 @@ public class GameManager : MonoBehaviour
 
         UpdateCurrentHand();
 
-        if (currentHand.Count < 1 || currentHand.Count > extendedHandSize)
+        // 🔥 MODIFICADO: Debe terminar con EXACTAMENTE 3 cartas
+        if (currentHand.Count != maxHandSize)
         {
-            ShowWarning($"Debes tener entre 1 y {extendedHandSize} cartas para terminar tu turno. Tienes {currentHand.Count}.");
-            return;
-        }
-
-        if (currentHand.Count > maxHandSize)
-        {
-            ShowWarning($"Tienes {currentHand.Count} cartas. Debes descartar hasta tener {maxHandSize}.");
-            EnableDiscardMode();
+            ShowWarning($"Debes terminar tu turno con exactamente {maxHandSize} cartas. Tienes {currentHand.Count}.");
             return;
         }
 
@@ -985,7 +1044,7 @@ public class GameManager : MonoBehaviour
     private void OnTimeOut()
     {
         Debug.Log("[GameManager] ¡Tiempo agotado!");
-        // 🔊 Detener loop de timer
+
         if (SFXManager.Instance != null)
             SFXManager.Instance.StopTimerLoop();
 
@@ -995,6 +1054,7 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // 🔥 MODIFICADO: Descartar hasta tener EXACTAMENTE 3 cartas
         while (currentHand.Count > maxHandSize)
         {
             int randomIndex = Random.Range(0, currentHand.Count);
@@ -1021,13 +1081,16 @@ public class GameManager : MonoBehaviour
             fusionManager.SetInteractionEnabled(false);
         }
 
+        // 🔥 NUEVO: Ocultar contadores al terminar turno
+        if (scansCountText) scansCountText.gameObject.SetActive(false);
+        if (fusionsCountText) fusionsCountText.gameObject.SetActive(false);
+
         currentPlayerIndex++;
 
         if (currentPlayerIndex >= playerNames.Count)
         {
             currentPlayerIndex = 0;
             currentRound++;
-            isFirstRoundComplete = true;
 
             if (isMultiplayer && networkManager != null && networkManager.isHost)
             {
@@ -1094,10 +1157,19 @@ public class GameManager : MonoBehaviour
         Debug.LogWarning($"[GameManager] {message}");
     }
 
+    // 🔥 MODIFICADO: Incrementar contador de fusiones
     public async void OnCardFused()
     {
+        fusionsUsedThisTurn++;
+        UpdateTurnCounters();
+
+        Debug.Log($"[GameManager] ✅ Fusión completada ({fusionsUsedThisTurn}/{maxFusionsPerTurn})");
+
         UpdateCurrentHand();
         UpdateDiscardButton();
+
+        // 🔥 NUEVO: Reconfigurar botones después de fusionar
+        ConfigureTurnButtons();
 
         if (isMultiplayer && networkManager != null && fusionManager != null)
         {
@@ -1123,7 +1195,6 @@ public class GameManager : MonoBehaviour
     {
         if (!isMultiplayer) return;
 
-        // 🔥 CRÍTICO: Ignorar eventos de Firebase durante preparación
         if (currentPhase == GamePhase.Preparation)
         {
             Debug.Log($"[GameManager] ⏸️ Evento de gameState ignorado (estamos en preparación)");
@@ -1139,11 +1210,6 @@ public class GameManager : MonoBehaviour
         currentPlayerIndex = gameState.currentTurn;
 
         if (roundText) roundText.text = $"Ronda {currentRound}";
-
-        if (currentRound > 1)
-        {
-            isFirstRoundComplete = true;
-        }
 
         if (networkManager != null)
         {

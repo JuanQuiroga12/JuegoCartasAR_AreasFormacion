@@ -3,7 +3,32 @@ guid: d1a824ff98924e2478e7fac516424678
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Black+Blue Dots
+    second: {fileID: -1580535799172915004, guid: 1766fc7076a24e34ab830332fd840394, type: 3}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Black_Plastic
+    second: {fileID: -1580535799172915004, guid: 1766fc7076a24e34ab830332fd840394, type: 3}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Decals
+    second: {fileID: 2100000, guid: ae830609f8b6ac94fa82c922b42b8ce5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Material.003
+    second: {fileID: 4874126678125670354, guid: 8551100a32e64384ea3f5d63ea0a3de8, type: 3}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PixelArt_Simple
+    second: {fileID: 2100000, guid: ae830609f8b6ac94fa82c922b42b8ce5, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
