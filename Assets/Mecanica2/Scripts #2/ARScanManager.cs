@@ -77,6 +77,18 @@ public class ARScanManager : MonoBehaviour
             Debug.LogError("[ARScanManager] ❌ MultipleImagesTrackingManager NO encontrado!");
         }
 
+        // 🔥 CRÍTICO: Conectar el botón de cancelar
+        if (cancelScanButton != null)
+        {
+            cancelScanButton.onClick.RemoveAllListeners(); // Limpiar listeners previos
+            cancelScanButton.onClick.AddListener(CancelScan);
+            Debug.Log("[ARScanManager] ✅ Botón cancelar conectado");
+        }
+        else
+        {
+            Debug.LogError("[ARScanManager] ❌ cancelScanButton es NULL! No se puede conectar el listener");
+        }
+
         Debug.Log("[ARScanManager] 🔄 Llamando InitializeImageMapping()...");
         InitializeImageMapping();
         Debug.Log("[ARScanManager] ✅ Awake completado");
@@ -174,25 +186,75 @@ public class ARScanManager : MonoBehaviour
 
     public void CancelScan()
     {
-        Debug.Log("[ARScanManager] ❌ Cancelando escaneo");
+        Debug.Log("[ARScanManager] ========================================");
+        Debug.Log("[ARScanManager] 🚫 CancelScan() LLAMADO");
+        Debug.Log("[ARScanManager] ========================================");
 
+        if (!isScanning)
+        {
+            Debug.LogWarning("[ARScanManager] No hay escaneo activo para cancelar");
+
+            // 🔥 FORZAR CIERRE DEL PANEL aunque no esté escaneando
+            if (scanPanel != null && scanPanel.activeSelf)
+            {
+                Debug.Log("[ARScanManager] 🔧 Forzando cierre de panel activo");
+                scanPanel.SetActive(false);
+            }
+
+            return;
+        }
+
+        Debug.Log("[ARScanManager] 🔄 Deteniendo escaneo activo...");
+
+        // Detener escaneo
         isScanning = false;
         currentScanTime = 0f;
         pendingCard = null;
-        isProcessingCard = false; // 🔥 RESETEAR FLAG
+        isProcessingCard = false;
 
-        if (scanPanel != null)
+        // Resetear UI
+        if (scanProgressBar != null)
         {
-            scanPanel.SetActive(false);
+            scanProgressBar.fillAmount = 0f;
+            scanProgressBar.gameObject.SetActive(false);
+            Debug.Log("[ARScanManager] ✓ Barra de progreso reseteada");
         }
 
+        if (scanInstructionText != null)
+        {
+            scanInstructionText.text = "Escaneo cancelado";
+            Debug.Log("[ARScanManager] ✓ Texto de instrucciones actualizado");
+        }
+
+        if (scanSuccessIndicator != null)
+        {
+            scanSuccessIndicator.SetActive(false);
+            Debug.Log("[ARScanManager] ✓ Indicador de éxito ocultado");
+        }
+
+        // 🔥 CRÍTICO: Cerrar el panel
+        if (scanPanel != null)
+        {
+            Debug.Log("[ARScanManager] 🔒 Cerrando panel de escaneo...");
+            scanPanel.SetActive(false);
+            Debug.Log("[ARScanManager] ✅ Panel cerrado correctamente");
+        }
+        else
+        {
+            Debug.LogError("[ARScanManager] ❌ scanPanel es NULL, no se puede cerrar!");
+        }
+
+        // Desuscribir eventos
         if (imageTrackingManager != null)
         {
             imageTrackingManager.OnImageDetected -= OnImageDetectedFromTracking;
             imageTrackingManager.OnImageLost -= OnImageLostFromTracking;
+            Debug.Log("[ARScanManager] ✓ Eventos de tracking desuscritos");
         }
 
-        DisableAR();
+        Debug.Log("[ARScanManager] ========================================");
+        Debug.Log("[ARScanManager] ✅ Escaneo cancelado exitosamente");
+        Debug.Log("[ARScanManager] ========================================");
     }
 
     private void EnableAR()
@@ -318,11 +380,10 @@ public class ARScanManager : MonoBehaviour
 
     private void CompleteScan()
     {
-        if (pendingCard == null || isProcessingCard) return; // 🔥 VERIFICAR FLAG
+        if (pendingCard == null || isProcessingCard) return;
 
-        // 🔥 ACTIVAR FLAG INMEDIATAMENTE para prevenir duplicados
         isProcessingCard = true;
-        isScanning = false; // 🔥 DESHABILITAR ESCANEO INMEDIATAMENTE
+        isScanning = false;
 
         Debug.Log($"[ARScanManager] 🎉 ¡Escaneo completado! Carta: {pendingCard.displayName}");
 
@@ -336,16 +397,16 @@ public class ARScanManager : MonoBehaviour
             scanInstructionText.text = $"¡{pendingCard.displayName} agregada a tu mano!";
         }
 
-        // 🔥 CRÍTICO: Solo notificar al GameManager, NO agregar aquí
-        // El GameManager se encargará de agregar la carta
+        // 🔥 CRÍTICO: Notificar al GameManager
         if (gameManager != null)
         {
             Debug.Log($"[ARScanManager] 📤 Notificando GameManager: {pendingCard.displayName}");
             gameManager.OnCardScanned(pendingCard);
+            Debug.Log($"[ARScanManager] ✅ GameManager.OnCardScanned() ejecutado correctamente");
         }
         else
         {
-            Debug.LogError("[ARScanManager] ❌ GameManager es null");
+            Debug.LogError("[ARScanManager] ❌ GameManager es null, NO SE PUEDE AGREGAR LA CARTA");
         }
 
         // Desuscribir eventos

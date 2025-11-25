@@ -136,15 +136,18 @@ public class LobbyUIManager : MonoBehaviour
 
     void OnJoinRoomClicked()
     {
-        if (string.IsNullOrEmpty(roomCodeInput.text))
+        // 🔥 CAMBIADO: Siempre mostrar el panel de unirse
+        Debug.Log("[LobbyUI] Abriendo panel para unirse a sala...");
+
+        mainMenuPanel.SetActive(false);
+        joinRoomPanel.SetActive(true);
+
+        // 🔥 NUEVO: Limpiar el campo de código de sala
+        if (roomCodeInput != null)
         {
-            // Buscar sala automáticamente
-            JoinAnyAvailableRoom();
-        }
-        else
-        {
-            mainMenuPanel.SetActive(false);
-            joinRoomPanel.SetActive(true);
+            roomCodeInput.text = "";
+            roomCodeInput.placeholder.GetComponent<TMP_Text>().text =
+                "Código de sala (déjalo vacío para buscar automáticamente)";
         }
     }
 
@@ -185,46 +188,61 @@ public class LobbyUIManager : MonoBehaviour
 
     async void OnConfirmJoinRoom()
     {
-        string roomCode = roomCodeInput.text.ToUpper();
+        // 🔥 CRÍTICO: Obtener nombre del jugador del campo principal
+        string playerName = string.IsNullOrEmpty(playerNameInput.text) ?
+            "Jugador" : playerNameInput.text;
 
-        if (string.IsNullOrEmpty(roomCode))
-        {
-            Debug.LogWarning("[LobbyUI] Código de sala vacío");
-            return;
-        }
+        string roomCode = roomCodeInput.text.ToUpper().Trim();
 
         confirmJoinButton.interactable = false;
 
-        string roomId = await networkManager.JoinRoom(roomCode);
+        // 🔥 NUEVO: Mostrar indicador de carga
+        if (roomCodeInput != null)
+        {
+            roomCodeInput.placeholder.GetComponent<TMP_Text>().text = "⏳ Conectando...";
+        }
+
+        string roomId;
+
+        // 🔥 Si hay código, intentar unirse a esa sala específica
+        if (!string.IsNullOrEmpty(roomCode))
+        {
+            Debug.Log($"[LobbyUI] Intentando unirse a sala: {roomCode}");
+            roomId = await networkManager.JoinRoom(roomCode, playerName); // 🔥 Pasar el nombre
+        }
+        else
+        {
+            // 🔥 Si está vacío, buscar cualquier sala disponible
+            Debug.Log($"[LobbyUI] Buscando sala disponible automáticamente...");
+            roomId = await networkManager.JoinRoom(null, playerName); // 🔥 Pasar el nombre
+        }
 
         if (!string.IsNullOrEmpty(roomId))
         {
+            Debug.Log($"[LobbyUI] ✅ Unido a sala: {roomId} como {playerName}");
             ShowWaitingRoom(roomId);
         }
         else
         {
+            // 🔥 Manejar error
             confirmJoinButton.interactable = true;
+
+            if (roomCodeInput != null)
+            {
+                if (!string.IsNullOrEmpty(roomCode))
+                {
+                    roomCodeInput.placeholder.GetComponent<TMP_Text>().text =
+                        "❌ Sala no encontrada. Intenta con otro código.";
+                }
+                else
+                {
+                    roomCodeInput.placeholder.GetComponent<TMP_Text>().text =
+                        "❌ No hay salas disponibles. Crea una nueva.";
+                }
+            }
+
             Debug.LogError("[LobbyUI] Error al unirse a la sala");
         }
-    }
-
-    async void JoinAnyAvailableRoom()
-    {
-        joinRoomButton.interactable = false;
-
-        string roomId = await networkManager.JoinRoom();
-
-        if (!string.IsNullOrEmpty(roomId))
-        {
-            ShowWaitingRoom(roomId);
-        }
-        else
-        {
-            // No hay salas disponibles, crear una nueva
-            OnCreateRoomClicked();
-        }
-
-        joinRoomButton.interactable = true;
     }
 
     void ShowWaitingRoom(string roomId)
@@ -256,29 +274,49 @@ public class LobbyUIManager : MonoBehaviour
 
     async void UpdatePlayersList(RoomData roomData)
     {
-        // Limpiar lista actual
+        Debug.Log("[LobbyUI] ========================================");
+        Debug.Log("[LobbyUI] 🔄 Actualizando lista de jugadores...");
+        Debug.Log("[LobbyUI] ========================================");
+
+        // 🔥 LIMPIAR LISTA ACTUAL
         foreach (var item in playerListItems.Values)
         {
-            Destroy(item);
+            if (item != null)
+            {
+                Debug.Log($"[LobbyUI] 🗑️ Destruyendo item: {item.name}");
+                Destroy(item);
+            }
         }
         playerListItems.Clear();
+
+        // 🔥 VALIDAR QUE playersListContainer NO SEA NULL
+        if (playersListContainer == null)
+        {
+            Debug.LogError("[LobbyUI] ❌ playersListContainer es NULL!");
+            return;
+        }
+
+        Debug.Log($"[LobbyUI] ✓ playersListContainer asignado: {playersListContainer.name}");
 
         // Cargar prefab si no está asignado
         if (playerItemPrefab == null)
         {
+            Debug.LogWarning("[LobbyUI] ⚠️ playerItemPrefab es NULL, cargando desde Resources...");
             playerItemPrefab = Resources.Load<GameObject>("PlayerItemPrefab");
 
             if (playerItemPrefab == null)
             {
-                Debug.LogError("[LobbyUI] PlayerItemPrefab no encontrado en Resources");
+                Debug.LogError("[LobbyUI] ❌ PlayerItemPrefab no encontrado en Resources");
                 return;
             }
+
+            Debug.Log("[LobbyUI] ✓ PlayerItemPrefab cargado desde Resources");
         }
 
-        // 🔥 OBTENER JUGADORES REALES DESDE FIREBASE 🔥
+        // 🔥 OBTENER JUGADORES REALES DESDE FIREBASE
         if (networkManager == null || networkManager.currentRoomRef == null)
         {
-            Debug.LogWarning("[LobbyUI] No se puede cargar jugadores: sala no inicializada");
+            Debug.LogWarning("[LobbyUI] ⚠️ No se puede cargar jugadores: sala no inicializada");
             return;
         }
 
@@ -288,7 +326,7 @@ public class LobbyUIManager : MonoBehaviour
 
             if (!playersSnapshot.Exists || !playersSnapshot.HasChildren)
             {
-                Debug.LogWarning("[LobbyUI] No hay jugadores en la sala");
+                Debug.LogWarning("[LobbyUI] ⚠️ No hay jugadores en la sala");
                 return;
             }
 
@@ -304,10 +342,38 @@ public class LobbyUIManager : MonoBehaviour
             // Ordenar por playerNumber
             playersList.Sort((a, b) => a.playerNumber.CompareTo(b.playerNumber));
 
-            // Crear items de UI para cada jugador real
+            Debug.Log($"[LobbyUI] 📋 Total de jugadores a mostrar: {playersList.Count}");
+
+            // 🔥 CRÍTICO: Instanciar solo dentro del contenedor correcto
             foreach (var playerData in playersList)
             {
-                var playerItem = Instantiate(playerItemPrefab, playersListContainer);
+                Debug.Log($"[LobbyUI] ➕ Instanciando item para: {playerData.playerName}");
+
+                // 🔥 IMPORTANTE: Instanciar con 'worldPositionStays: false'
+                var playerItem = Instantiate(playerItemPrefab, playersListContainer, false);
+
+                // 🔥 VERIFICAR QUE SE INSTANCIÓ CORRECTAMENTE
+                if (playerItem == null)
+                {
+                    Debug.LogError($"[LobbyUI] ❌ No se pudo instanciar item para {playerData.playerName}");
+                    continue;
+                }
+
+                Debug.Log($"[LobbyUI] ✓ Item instanciado: {playerItem.name}");
+                Debug.Log($"[LobbyUI] 📍 Padre: {playerItem.transform.parent?.name ?? "NULL"}");
+
+                // 🔥 RESETEAR TRANSFORMACIÓN PARA ASEGURAR POSICIONAMIENTO CORRECTO
+                RectTransform itemRect = playerItem.GetComponent<RectTransform>();
+                if (itemRect != null)
+                {
+                    itemRect.anchoredPosition = Vector2.zero;
+                    itemRect.localScale = Vector3.one;
+                    itemRect.localRotation = Quaternion.identity;
+
+                    Debug.Log($"[LobbyUI] ✓ Transform reseteado para {playerData.playerName}");
+                }
+
+                // Configurar texto
                 var text = playerItem.GetComponentInChildren<TMP_Text>();
 
                 if (text != null)
@@ -321,16 +387,25 @@ public class LobbyUIManager : MonoBehaviour
                         playerText += " (Tú)";
 
                     text.text = playerText;
+
+                    Debug.Log($"[LobbyUI] ✓ Texto configurado: {playerText}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[LobbyUI] ⚠️ No se encontró TMP_Text en el prefab para {playerData.playerName}");
                 }
 
                 playerListItems.Add(playerData.playerId, playerItem);
             }
 
-            Debug.Log($"[LobbyUI] ✓ Lista de jugadores actualizada: {playerListItems.Count} jugadores");
+            Debug.Log("[LobbyUI] ========================================");
+            Debug.Log($"[LobbyUI] ✅ Lista de jugadores actualizada: {playerListItems.Count} jugadores");
+            Debug.Log("[LobbyUI] ========================================");
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"[LobbyUI] Error al actualizar lista de jugadores: {e.Message}");
+            Debug.LogError($"[LobbyUI] ❌ Error al actualizar lista de jugadores: {e.Message}");
+            Debug.LogError($"[LobbyUI] StackTrace: {e.StackTrace}");
         }
     }
 

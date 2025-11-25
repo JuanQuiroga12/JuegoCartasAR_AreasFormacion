@@ -735,24 +735,62 @@ public class GameManager : MonoBehaviour
 
     public async void OnCardScanned(CardData scannedCard)
     {
+        // 🔥 VALIDACIÓN: Carta no puede ser null
+        if (scannedCard == null)
+        {
+            Debug.LogError("[GameManager] ❌ Carta escaneada es NULL");
+            return;
+        }
+
+        Debug.Log($"[GameManager] 🎴 Carta escaneada: {scannedCard.displayName}");
+        Debug.Log($"[GameManager] 📍 Fase actual: {currentPhase}");
+        Debug.Log($"[GameManager] 📍 Ronda actual: {currentRound}");
+
+        // Si estamos en fase de preparación, manejar de forma especial
         if (currentPhase == GamePhase.Preparation)
         {
+            Debug.Log("[GameManager] 🔧 Procesando escaneo en FASE DE PREPARACIÓN");
             OnPreparationCardScanned(scannedCard);
             return;
         }
 
-        Debug.Log($"[GameManager] Carta escaneada: {scannedCard.displayName}");
+        // 🔥 CRÍTICO: Agregar carta al FusionManager en juego normal (ronda 2+)
+        Debug.Log("[GameManager] 🔧 Procesando escaneo en JUEGO NORMAL (ronda 2+)");
 
-        if (isMultiplayer && networkManager != null)
+        // 1. Agregar carta a la mano visualmente
+        if (fusionManager != null)
         {
-            await networkManager.SendCardScan(scannedCard.id);
+            Debug.Log($"[GameManager] ➕ Agregando '{scannedCard.displayName}' al FusionManager");
+            fusionManager.AddCardToHand(scannedCard);
+        }
+        else
+        {
+            Debug.LogError("[GameManager] ❌ FusionManager es NULL! No se puede agregar la carta");
         }
 
+        // 2. Actualizar estado local
         UpdateCurrentHand();
         UpdateDiscardButton();
 
+        // 3. Marcar que ya se escaneó en este turno
         hasScannedThisTurn = true;
-        if (scanButton) scanButton.gameObject.SetActive(false);
+
+        // 4. Ocultar botón de escaneo
+        if (scanButton)
+        {
+            scanButton.gameObject.SetActive(false);
+            Debug.Log("[GameManager] ✓ Botón de escaneo ocultado");
+        }
+
+        // 5. Sincronizar con Firebase si es multijugador
+        if (isMultiplayer && networkManager != null)
+        {
+            Debug.Log("[GameManager] 📡 Sincronizando escaneo con Firebase...");
+            await networkManager.SendCardScan(scannedCard.id);
+        }
+
+        Debug.Log($"[GameManager] ✅ Carta '{scannedCard.displayName}' procesada correctamente");
+        Debug.Log($"[GameManager] 📊 Total de cartas en mano: {fusionManager?.GetHandCount() ?? 0}");
     }
 
     private IEnumerator SimulateCardScan()

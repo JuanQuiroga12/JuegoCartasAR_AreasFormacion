@@ -93,22 +93,42 @@ public class FusionManager : MonoBehaviour
 
     public void AddCardToHand(CardData cardData)
     {
+        Debug.Log($"[FusionManager] ========================================");
+        Debug.Log($"[FusionManager] 🎯 AddCardToHand LLAMADO");
+        Debug.Log($"[FusionManager] ========================================");
+
         if (cardData == null)
         {
             Debug.LogWarning("[FusionManager] ⚠️ Intentando agregar carta NULL");
             return;
         }
 
+        Debug.Log($"[FusionManager] 📝 Carta a agregar: '{cardData.displayName}' (ID: {cardData.id})");
+        Debug.Log($"[FusionManager] 📊 Cartas actuales en mano: {_handViews.Count}");
+
         if (_handViews.Count >= 4)
         {
-            Debug.LogWarning("[FusionManager] La mano ya tiene el máximo de cartas permitidas");
+            Debug.LogWarning($"[FusionManager] ⚠️ La mano ya tiene el máximo de cartas permitidas ({_handViews.Count}/4)");
             return;
         }
 
+        Debug.Log($"[FusionManager] 🔨 Creando CardView...");
         var newCard = CreateCardView(cardData);
+
+        if (newCard == null)
+        {
+            Debug.LogError("[FusionManager] ❌ CreateCardView retornó NULL!");
+            return;
+        }
+
+        Debug.Log($"[FusionManager] ✅ CardView creado exitosamente: {newCard.name}");
+
         UpdateHandLayout();
 
-        Debug.Log($"[FusionManager] ✅ Carta agregada: {cardData.displayName}. Total en mano: {_handViews.Count}");
+        Debug.Log($"[FusionManager] ========================================");
+        Debug.Log($"[FusionManager] ✅ Carta '{cardData.displayName}' agregada exitosamente");
+        Debug.Log($"[FusionManager] 📊 Total en mano ahora: {_handViews.Count}");
+        Debug.Log($"[FusionManager] ========================================");
     }
 
     public void RemoveCardFromHand(CardView card)

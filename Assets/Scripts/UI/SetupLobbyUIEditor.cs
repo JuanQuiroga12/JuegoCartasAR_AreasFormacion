@@ -101,7 +101,8 @@ public class SetupLobbyUIEditor : EditorWindow
         SetupTitleText(joinTitle, new Vector2(0, 0.7f), new Vector2(1, 0.9f));
 
         // Room Code Input
-        GameObject roomCodeInput = FindOrCreateInputField("RoomCodeInput", joinRoomPanel.transform, "Código de sala (opcional)...", forceRecreate);
+        GameObject roomCodeInput = FindOrCreateInputField("RoomCodeInput", joinRoomPanel.transform, 
+    "Código de sala (déjalo vacío para buscar automáticamente)", forceRecreate);
         SetupCenteredElement(roomCodeInput, new Vector2(0.3f, 0.5f), new Vector2(0.7f, 0.57f));
 
         // Configurar input para mayúsculas
@@ -110,6 +111,7 @@ public class SetupLobbyUIEditor : EditorWindow
         {
             tmpInput.characterLimit = 6;
             tmpInput.characterValidation = TMP_InputField.CharacterValidation.Alphanumeric;
+            tmpInput.contentType = TMP_InputField.ContentType.Alphanumeric;
         }
 
         // Confirm Join Button
@@ -275,22 +277,36 @@ public class SetupLobbyUIEditor : EditorWindow
 
         string fullPath = prefabPath + "/PlayerItemPrefab.prefab";
 
-        // Verificar si ya existe
+        // 🔥 ELIMINAR PREFAB EXISTENTE SI EXISTE PARA RECREARLO CORRECTAMENTE
         GameObject existingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(fullPath);
         if (existingPrefab != null)
         {
-            Debug.Log("[SetupLobbyUI] PlayerItemPrefab ya existe");
-            return;
+            Debug.Log("[SetupLobbyUI] Eliminando prefab anterior para recrearlo...");
+            AssetDatabase.DeleteAsset(fullPath);
         }
 
         // Crear prefab
         GameObject playerItem = new GameObject("PlayerItemPrefab");
 
         RectTransform rect = playerItem.AddComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(400, 60);
+
+        // 🔥 CRÍTICO: Configuración correcta para funcionar dentro de Vertical Layout Group
+        rect.anchorMin = new Vector2(0, 1); // Anclado arriba-izquierda
+        rect.anchorMax = new Vector2(1, 1); // Expandir horizontalmente
+        rect.pivot = new Vector2(0.5f, 1); // Pivot arriba-centro
+
+        // 🔥 NUEVO: Configurar tamaño fijo
+        rect.sizeDelta = new Vector2(0, 60); // Ancho automático (0), alto 60
+        rect.anchoredPosition = Vector2.zero; // 🔥 MUY IMPORTANTE: Posición relativa al padre
 
         Image bgImage = playerItem.AddComponent<Image>();
         bgImage.color = new Color(0.3f, 0.3f, 0.35f, 0.8f);
+
+        // 🔥 CRÍTICO: Layout Element para controlar tamaño dentro del Layout Group
+        LayoutElement layoutElement = playerItem.AddComponent<LayoutElement>();
+        layoutElement.preferredHeight = 60;
+        layoutElement.minHeight = 60;
+        layoutElement.flexibleWidth = 1; // Expandir para ocupar ancho disponible
 
         // Texto del jugador
         GameObject textGO = new GameObject("PlayerText");
@@ -310,9 +326,30 @@ public class SetupLobbyUIEditor : EditorWindow
 
         // Guardar como prefab
         PrefabUtility.SaveAsPrefabAsset(playerItem, fullPath);
+        Debug.Log($"[SetupLobbyUI] ✅ PlayerItemPrefab creado en: {fullPath}");
+
         Object.DestroyImmediate(playerItem);
 
-        Debug.Log($"[SetupLobbyUI] PlayerItemPrefab creado en: {fullPath}");
+        // 🔥 COPIAR A RESOURCES
+        string resourcesPath = "Assets/Resources";
+        if (!AssetDatabase.IsValidFolder(resourcesPath))
+        {
+            AssetDatabase.CreateFolder("Assets", "Resources");
+        }
+
+        string resourcesFullPath = resourcesPath + "/PlayerItemPrefab.prefab";
+
+        // Eliminar copia anterior en Resources si existe
+        if (AssetDatabase.LoadAssetAtPath<GameObject>(resourcesFullPath) != null)
+        {
+            AssetDatabase.DeleteAsset(resourcesFullPath);
+        }
+
+        AssetDatabase.CopyAsset(fullPath, resourcesFullPath);
+        Debug.Log($"[SetupLobbyUI] ✓ Prefab copiado a Resources: {resourcesFullPath}");
+
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
     }
 
     private static GameObject FindOrCreatePanel(string name, Transform parent, bool forceRecreate)
