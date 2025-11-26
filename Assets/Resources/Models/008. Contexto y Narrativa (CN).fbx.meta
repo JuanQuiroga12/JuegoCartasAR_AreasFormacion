@@ -8,17 +8,27 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Material
-    second: {fileID: 2100000, guid: 796b8628e9f318b45904f651678edbb9, type: 2}
+    second: {fileID: 2100000, guid: 247ec1d74423a5e46a891e0df716e717, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Material.004
-    second: {fileID: 2100000, guid: 796b8628e9f318b45904f651678edbb9, type: 2}
+    second: {fileID: 2100000, guid: 247ec1d74423a5e46a891e0df716e717, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PixelArt_Simple
+    second: {fileID: 2100000, guid: 3a1ce6f3ae8b4e94d81b6e9645c5a78b, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: fotito
+    second: {fileID: 2100000, guid: 5a9f904927d7ea34ea9756bccddc4498, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: marquito
-    second: {fileID: 2100000, guid: fd009fbb8d7945b49b272c58667c936e, type: 2}
+    second: {fileID: 2100000, guid: 2c0738fe7de43ef49b1263d2f8ad9c05, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule

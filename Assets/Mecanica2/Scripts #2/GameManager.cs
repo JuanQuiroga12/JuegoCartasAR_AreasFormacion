@@ -28,6 +28,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI currentPlayerText;
     [SerializeField] private GameObject scanPromptPanel;
 
+    // 🔥 AGREGAR AL INICIO DE LA CLASE (después de las variables privadas existentes)
+
+    [Header("🏆 Sistema de Victoria")]
+    [SerializeField] private VictoryManager victoryManager;
+
     [Header("🔥 UI Contadores de Turno")]
     [SerializeField] private TextMeshProUGUI scansCountText; // 🔥 NUEVO
     [SerializeField] private TextMeshProUGUI fusionsCountText; // 🔥 NUEVO
@@ -74,6 +79,8 @@ public class GameManager : MonoBehaviour
     // Multijugador
     private bool isMyTurn = false;
     private List<PlayerData> allPlayers = new List<PlayerData>();
+
+    private bool gameEnded = false; // 🔥 NUEVO: Flag para evitar múltiples victorias
 
     // Eventos
     public delegate void OnTurnChanged(int playerIndex);
@@ -1167,10 +1174,51 @@ public class GameManager : MonoBehaviour
 
         UpdateCurrentHand();
         UpdateDiscardButton();
-
-        // 🔥 NUEVO: Reconfigurar botones después de fusionar
         ConfigureTurnButtons();
 
+        // 🔥 NUEVO: Verificar si la última fusión resultó en una carta ganadora
+        if (fusionManager != null && victoryManager != null && !gameEnded)
+        {
+            CardData lastFusionResult = fusionManager.GetLastFusionResult();
+
+            if (lastFusionResult != null && victoryManager.IsWinningCard(lastFusionResult.id))
+            {
+                Debug.Log($"[GameManager] 🏆 ¡CARTA GANADORA DETECTADA! {lastFusionResult.displayName}");
+
+                // Marcar juego como terminado
+                gameEnded = true;
+
+                // Detener el timer
+                isTurnActive = false;
+                if (SFXManager.Instance != null)
+                    SFXManager.Instance.StopTimerLoop();
+
+                // Deshabilitar interacción
+                if (fusionManager != null)
+                {
+                    fusionManager.SetInteractionEnabled(false);
+                }
+
+                // Esperar un momento para que el jugador vea la carta
+                await Task.Delay(1500);
+
+                // Mostrar panel de victoria para el jugador actual
+                if (isMyTurn || !isMultiplayer)
+                {
+                    victoryManager.ShowVictoryPanel(lastFusionResult);
+                }
+
+                // Notificar a otros jugadores en multijugador
+                if (isMultiplayer && networkManager != null)
+                {
+                    await networkManager.SendGameEnd(lastFusionResult.id);
+                }
+
+                return; // Salir para evitar procesamiento adicional
+            }
+        }
+
+        // Continuar con la sincronización normal si no es carta ganadora
         if (isMultiplayer && networkManager != null && fusionManager != null)
         {
             var selectedCards = fusionManager.GetSelectedData();

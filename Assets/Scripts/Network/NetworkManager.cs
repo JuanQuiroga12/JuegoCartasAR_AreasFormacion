@@ -21,14 +21,17 @@ public class NetworkManager : MonoBehaviour
     public string currentRoomId;
     public bool isHost = false;
     public string playerId;
-    public int playerNumber = -1; // 0-3 para identificar al jugador
+    public int playerNumber = -1;
+
+    // 🔥 NUEVO: Campo para almacenar el nombre del jugador
+    private string _playerName; // ⬅️ AGREGADO
 
     public event Action<RoomData> OnRoomUpdated;
     public event Action<string> OnPlayerJoined;
     public event Action<string> OnPlayerLeft;
     public event Action OnGameStarted;
     public event Action<GameStateData> OnGameStateUpdated;
-    public event Action OnEndTurnReceived; // 🔥 NUEVO
+    public event Action OnEndTurnReceived;
 
     [Header("References")]
     private DatabaseReference roomsRef;
@@ -71,14 +74,13 @@ public class NetworkManager : MonoBehaviour
         });
     }
 
-    // 🔥 NUEVO: Método para esperar autenticación 🔥
     private async Task<bool> WaitForAuthentication(float timeout = 10f)
     {
         float elapsed = 0f;
 
         while (string.IsNullOrEmpty(playerId) && elapsed < timeout)
         {
-            await Task.Delay(100); // Esperar 100ms
+            await Task.Delay(100);
             elapsed += 0.1f;
         }
 
@@ -108,7 +110,6 @@ public class NetworkManager : MonoBehaviour
 
     public async Task<string> CreateRoom(int maxPlayers, string hostName)
     {
-        // 🔥 ESPERAR AUTENTICACIÓN ANTES DE CONTINUAR 🔥
         if (string.IsNullOrEmpty(playerId))
         {
             Debug.Log("[NetworkManager] ⏳ Esperando autenticación...");
@@ -123,22 +124,22 @@ public class NetworkManager : MonoBehaviour
             Debug.Log("[NetworkManager] ✅ Usuario autenticado exitosamente");
         }
 
-        // Validar que no esté ya en una sala
         if (!string.IsNullOrEmpty(currentRoomId))
         {
             Debug.LogWarning($"[NetworkManager] Ya estás en la sala {currentRoomId}. Sal primero antes de crear una nueva.");
             return currentRoomId;
         }
 
-        // Crear nueva sala
         string roomId = GenerateRoomId();
 
-        // 🔥 INICIALIZAR currentRoomRef AQUÍ 🔥
         currentRoomRef = roomsRef.Child(roomId);
 
         currentRoomId = roomId;
         isHost = true;
         playerNumber = 0;
+
+        // 🔥 GUARDAR nombre del jugador
+        _playerName = hostName;
 
         RoomData roomData = new RoomData
         {
@@ -176,7 +177,6 @@ public class NetworkManager : MonoBehaviour
             Debug.LogError($"[NetworkManager] ❌ Error al crear sala: {e.Message}");
             Debug.LogError($"[NetworkManager] StackTrace: {e.StackTrace}");
 
-            // Limpiar estado si falla
             currentRoomId = null;
             currentRoomRef = null;
             isHost = false;
@@ -186,10 +186,8 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
-    // Modificar la firma del método JoinRoom para aceptar playerName
     public async Task<string> JoinRoom(string roomId = null, string playerName = null)
     {
-        // 🔥 ESPERAR AUTENTICACIÓN ANTES DE CONTINUAR 🔥
         if (string.IsNullOrEmpty(playerId))
         {
             Debug.Log("[NetworkManager] ⏳ Esperando autenticación...");
@@ -204,7 +202,6 @@ public class NetworkManager : MonoBehaviour
             Debug.Log("[NetworkManager] ✅ Usuario autenticado exitosamente");
         }
 
-        // Si no se especifica sala, buscar una disponible
         if (string.IsNullOrEmpty(roomId))
         {
             var availableRoom = await FindAvailableRoom();
@@ -216,14 +213,12 @@ public class NetworkManager : MonoBehaviour
             roomId = availableRoom.roomId;
         }
 
-        // 🔥 VALIDAR QUE roomId SEA VÁLIDO ANTES DE USARLO 🔥
         if (string.IsNullOrEmpty(roomId))
         {
             Debug.LogError("[NetworkManager] ❌ roomId es null o vacío, no se puede unir");
             return null;
         }
 
-        // 🔥 VALIDAR QUE NO ESTEMOS YA EN UNA SALA 🔥
         if (!string.IsNullOrEmpty(currentRoomId))
         {
             if (currentRoomId == roomId)
@@ -241,7 +236,6 @@ public class NetworkManager : MonoBehaviour
         currentRoomId = roomId;
         currentRoomRef = roomsRef.Child(roomId);
 
-        // Obtener datos de la sala
         var roomSnapshot = await currentRoomRef.GetValueAsync();
         if (!roomSnapshot.Exists)
         {
@@ -269,7 +263,6 @@ public class NetworkManager : MonoBehaviour
             return null;
         }
 
-        // Asignar número de jugador
         var playersSnapshot = await currentRoomRef.Child("players").GetValueAsync();
         playerNumber = GetNextAvailablePlayerNumber(playersSnapshot);
 
@@ -281,25 +274,24 @@ public class NetworkManager : MonoBehaviour
             return null;
         }
 
-        // 🔥 MODIFICADO: Usar el nombre proporcionado o generar uno 🔥
         string finalPlayerName = string.IsNullOrEmpty(playerName) ?
             $"Jugador {playerNumber + 1}" : playerName;
 
-        // Crear datos del jugador
+        // 🔥 GUARDAR nombre del jugador
+        _playerName = finalPlayerName;
+
         var playerData = new PlayerData
         {
             playerId = playerId,
-            playerName = finalPlayerName, // 🔥 CAMBIADO
+            playerName = finalPlayerName,
             playerNumber = playerNumber,
             isHost = false,
             isReady = false,
             joinedAt = ServerValue.Timestamp
         };
 
-        // Añadir jugador a la sala
         await currentRoomRef.Child("players").Child(playerId).SetValueAsync(playerData.ToDictionary());
 
-        // Actualizar contador de jugadores
         await currentRoomRef.Child("currentPlayers").SetValueAsync(roomData.currentPlayers + 1);
 
         SetupRoomListeners();
@@ -322,7 +314,6 @@ public class NetworkManager : MonoBehaviour
         {
             var roomData = RoomData.FromSnapshot(roomSnapshot);
 
-            // 🔥 VALIDAR QUE roomId NO SEA NULL O VACÍO 🔥
             if (string.IsNullOrEmpty(roomData.roomId))
             {
                 Debug.LogWarning($"[NetworkManager] Sala con roomId inválido encontrada, saltando...");
@@ -385,19 +376,15 @@ public class NetworkManager : MonoBehaviour
         if (currentRoomRef == null)
             return;
 
-        // Escuchar cambios en la sala
         currentRoomRef.ValueChanged += HandleRoomValueChanged;
         roomListeners.Add(currentRoomRef);
 
-        // Escuchar cambios en el estado del juego
         currentRoomRef.Child("gameState").ValueChanged += HandleGameStateChanged;
         roomListeners.Add(currentRoomRef.Child("gameState"));
 
-        // 🔥 NUEVO: Escuchar eventos de fin de turno
         currentRoomRef.Child("actions").Child("endTurn").ValueChanged += HandleEndTurnChanged;
         roomListeners.Add(currentRoomRef.Child("actions").Child("endTurn"));
 
-        // 🔥 NUEVO: Listener para fase de preparación
         currentRoomRef.Child("preparation").ValueChanged += HandlePreparationChanged;
         roomListeners.Add(currentRoomRef.Child("preparation"));
     }
@@ -411,7 +398,6 @@ public class NetworkManager : MonoBehaviour
         OnPreparationStateUpdated?.Invoke(prepState);
     }
 
-    // 🔥 NUEVO: Manejar eventos de fin de turno
     private void HandleEndTurnChanged(object sender, ValueChangedEventArgs e)
     {
         if (e.DatabaseError != null || !e.Snapshot.Exists)
@@ -422,7 +408,6 @@ public class NetworkManager : MonoBehaviour
         {
             string endTurnPlayerId = endTurnData["playerId"].ToString();
 
-            // Solo notificar si NO soy yo quien terminó el turno
             if (endTurnPlayerId != playerId)
             {
                 Debug.Log($"[NetworkManager] 🔔 Fin de turno recibido de otro jugador");
@@ -449,6 +434,17 @@ public class NetworkManager : MonoBehaviour
                 OnGameStarted?.Invoke();
                 UnityEngine.SceneManagement.SceneManager.LoadScene("Mecanica 2");
             }
+
+            // 🔥 NUEVO: Detectar fin de juego
+            var gameStateSnapshot = e.Snapshot.Child("gameState");
+            if (gameStateSnapshot.Exists)
+            {
+                var gameEndSnapshot = gameStateSnapshot.Child("gameEnd");
+                if (gameEndSnapshot.Exists)
+                {
+                    HandleGameEnd(gameEndSnapshot);
+                }
+            }
         }
     }
 
@@ -460,7 +456,6 @@ public class NetworkManager : MonoBehaviour
         var gameState = GameStateData.FromSnapshot(e.Snapshot);
         OnGameStateUpdated?.Invoke(gameState);
 
-        // 🔥 NUEVO: SINCRONIZAR TIMER 🔥
         if (e.Snapshot.Child("turnTimeRemaining").Exists)
         {
             float timeRemaining = Convert.ToSingle(e.Snapshot.Child("turnTimeRemaining").Value);
@@ -468,7 +463,6 @@ public class NetworkManager : MonoBehaviour
         }
     }
 
-    // Métodos para sincronizar acciones del juego
     public async Task SendCardFusion(string[] cardIds, string resultId)
     {
         if (currentRoomRef == null) return;
@@ -528,24 +522,20 @@ public class NetworkManager : MonoBehaviour
         if (string.IsNullOrEmpty(currentRoomId) || string.IsNullOrEmpty(playerId))
             return;
 
-        // Remover jugador de la sala
         await currentRoomRef.Child("players").Child(playerId).RemoveValueAsync();
 
-        // Actualizar contador
         var roomSnapshot = await currentRoomRef.GetValueAsync();
         if (roomSnapshot.Exists)
         {
             var roomData = RoomData.FromSnapshot(roomSnapshot);
             await currentRoomRef.Child("currentPlayers").SetValueAsync(roomData.currentPlayers - 1);
 
-            // Si el host se va, eliminar la sala
             if (isHost || roomData.currentPlayers <= 1)
             {
                 await currentRoomRef.RemoveValueAsync();
             }
         }
 
-        // Limpiar listeners
         foreach (var listener in roomListeners)
         {
             if (listener is DatabaseReference dbRef)
@@ -567,9 +557,6 @@ public class NetworkManager : MonoBehaviour
         LeaveRoom().ContinueWith(task => { });
     }
 
-    // Añadir al final de la clase NetworkManager, antes del cierre de clase
-
-    // 🔥 NUEVO MÉTODO PARA SINCRONIZAR TIEMPO 🔥
     public async Task SendTurnTimer(float timeRemaining)
     {
         if (currentRoomRef == null) return;
@@ -577,10 +564,7 @@ public class NetworkManager : MonoBehaviour
         await currentRoomRef.Child("gameState").Child("turnTimeRemaining").SetValueAsync(timeRemaining);
     }
 
-    // 🔥 EVENTO PARA ACTUALIZAR TIEMPO 🔥
     public event Action<float> OnTurnTimerUpdated;
-
-    // ========== 🔥 NUEVOS MÉTODOS PARA FASE DE PREPARACIÓN ==========
 
     public event Action<PreparationStateData> OnPreparationStateUpdated;
 
@@ -611,6 +595,75 @@ public class NetworkManager : MonoBehaviour
         if (currentRoomRef == null) return;
 
         await currentRoomRef.Child("preparation").Child("timeRemaining").SetValueAsync(timeRemaining);
+    }
+
+    // 🔥 NUEVO: Notificar fin del juego
+    public async Task SendGameEnd(string winningCardID)
+    {
+        if (currentRoomRef == null)
+        {
+            Debug.LogError("[NetworkManager] No hay sala activa");
+            return;
+        }
+
+        try
+        {
+            var gameEndData = new Dictionary<string, object>
+        {
+            { "winningCardID", winningCardID },
+            { "winnerPlayerID", playerId },
+            { "winnerPlayerName", _playerName }, // ⬅️ USAR CAMPO PRIVADO
+            { "timestamp", ServerValue.Timestamp }
+        };
+
+            await currentRoomRef.Child("gameState").Child("gameEnd").SetValueAsync(gameEndData);
+
+            Debug.Log($"[NetworkManager] 🏆 Fin de juego notificado: {winningCardID}");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[NetworkManager] Error al notificar fin de juego: {e.Message}");
+        }
+    }
+
+    // 🔥 NUEVO: Manejar fin de juego
+    private void HandleGameEnd(DataSnapshot gameEndSnapshot)
+    {
+        if (!gameEndSnapshot.Exists) return;
+
+        string winningCardID = gameEndSnapshot.Child("winningCardID").Value?.ToString();
+        string winnerPlayerID = gameEndSnapshot.Child("winnerPlayerID").Value?.ToString();
+        string winnerPlayerName = gameEndSnapshot.Child("winnerPlayerName").Value?.ToString();
+
+        Debug.Log($"[NetworkManager] 🎮 Fin de juego recibido: {winnerPlayerName} ganó con {winningCardID}");
+
+        // 🔥 CORRECCIÓN: Usar UnityEngine.Object explícitamente
+        VictoryManager victoryManager = UnityEngine.Object.FindFirstObjectByType<VictoryManager>();
+        CardDatabase cardDatabase = UnityEngine.Object.FindFirstObjectByType<CardDatabase>();
+
+        if (victoryManager != null && cardDatabase != null)
+        {
+            if (winnerPlayerID != playerId)
+            {
+                Debug.Log("[NetworkManager] 😢 No ganaste esta partida");
+                victoryManager.ShowDefeatPanel();
+            }
+            else
+            {
+                // 🔥 CORRECCIÓN: Usar el método correcto del CardDatabase
+                CardData winningCard = cardDatabase.allCards.Find(c => c.id == winningCardID);
+
+                if (winningCard != null)
+                {
+                    Debug.Log("[NetworkManager] 🏆 ¡Eres el ganador!");
+                    victoryManager.ShowVictoryPanel(winningCard);
+                }
+                else
+                {
+                    Debug.LogError($"[NetworkManager] No se encontró la carta con ID: {winningCardID}");
+                }
+            }
+        }
     }
 }
 
@@ -646,7 +699,6 @@ public class PreparationStateData
     }
 }
 
-// Clases de datos
 [Serializable]
 public class RoomData
 {
