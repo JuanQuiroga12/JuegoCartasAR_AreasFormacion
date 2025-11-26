@@ -47,13 +47,20 @@ public class SFXManager : MonoBehaviour
     // Llamar cuando empiece un temporizador (preparación o turno)
     public void StartTimerLoop()
     {
-        if (timerSource == null || timerLoopClip == null) return;
+        Debug.Log("[SFXManager] StartTimerLoop llamado"); // debug
+
+        if (timerSource == null || timerLoopClip == null)
+        {
+            Debug.LogWarning("[SFXManager] Timer no configurado (timerSource o timerLoopClip es null)");
+            return;
+        }
 
         timerSource.clip = timerLoopClip;
         timerSource.loop = true;
         if (!timerSource.isPlaying)
             timerSource.Play();
     }
+
 
     // Llamar cuando termine el temporizador
     public void StopTimerLoop()
