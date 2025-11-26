@@ -152,7 +152,7 @@ MonoBehaviour:
   victoria: {fileID: 0}
   error: {fileID: 0}
   timerSource: {fileID: 463936529246445992}
-  timerLoopClip: {fileID: 8300000, guid: 7a5b3a2ccfd593d42bb7872f5fad947b, type: 3}
+  timerLoopClip: {fileID: 8300000, guid: 60c1bf23dbd407949883d1282bfeeff3, type: 3}
 --- !u!1001 &5402099622090584306
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -201,6 +201,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5514700816599273818, guid: c7fcff0aaf8f4c3479cd0aa0f426ce3a, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 8300000, guid: 60c1bf23dbd407949883d1282bfeeff3, type: 3}
     - target: {fileID: 7011841253383559303, guid: c7fcff0aaf8f4c3479cd0aa0f426ce3a, type: 3}
       propertyPath: m_Name
       value: TimerSource
